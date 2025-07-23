@@ -19,12 +19,6 @@ jobs:
         uses: olafurpg/setup-scala@v14
         with:
           java-version: adopt@1.11
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18" # or whatever
-      - name: Setup Scala.JS
-        uses: japgolly/setup-scalajs@v1
       - name: Cache sbt
         uses: coursier/cache-action@v6.3
       - name: npm install
@@ -32,8 +26,4 @@ jobs:
       - uses: scalacenter/sbt-dependency-submission@v2
         with:
           working-directory: ./
-         #  modules-ignore:
-         #    identus-mediator_3
-         #    mediator_3
-         #    webapp_sjs1_3
           configs-ignore: test scala-tool scala-doc-tool
