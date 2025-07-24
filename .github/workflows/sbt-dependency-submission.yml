@@ -21,8 +21,6 @@ jobs:
           java-version: adopt@1.11
       - name: Cache sbt
         uses: coursier/cache-action@v6.3
-      - name: npm install
-        run: npm install
       - uses: scalacenter/sbt-dependency-submission@v2
         with:
           working-directory: ./
