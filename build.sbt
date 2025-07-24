@@ -41,7 +41,7 @@ lazy val V = new {
   val scalaDID = "0.1.0-M27"
   val identusVDR = "0.2.1"
 
-  val munit = "1.1.0" // "0.7.29"
+  val munit = "1.1.1"
 
   val zio = "2.1.5"
   val zioJson = "0.7.42"
@@ -51,7 +51,7 @@ lazy val V = new {
   val zioSl4j = "2.2.2"
   val logback = "1.5.6"
   val logstash = "7.4"
-  val munitZio = "0.1.1"
+  val munitZio = "0.4.0"
   val zioTest = "2.1.5"
   val zioTestSbt = "2.1.5"
   val zioTestMagnolia = "2.1.5"
