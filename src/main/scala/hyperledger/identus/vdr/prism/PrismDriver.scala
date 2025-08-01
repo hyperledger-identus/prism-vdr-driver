@@ -1,22 +1,32 @@
 package hyperledger.identus.vdr.prism
 
+import zio.*
 import scala.jdk.CollectionConverters.*
 import fmgp.did.method.prism.*
 import fmgp.did.method.prism.cardano.*
 import fmgp.did.method.prism.vdr.*
-import org.hyperledger.identus.apollo.utils.KMMECSecp256k1PrivateKey
 import interfaces.Driver
 import interfaces.Proof
 import interfaces.Driver.OperationState
+import fmgp.crypto.Secp256k1PrivateKey
+
+object PRISMDriver {
+
+  def runProgram[E, A](program: ZIO[Any, E, A]): A =
+    Unsafe.unsafe { implicit unsafe =>
+      Runtime.default.unsafe.run(program).getOrThrowFiberFailure()
+    }
+}
 
 case class PRISMDriver(
     val bfConfig: BlockfrostConfig,
     wallet: CardanoWalletConfig,
     didPrism: DIDPrism,
-    vdrKey: KMMECSecp256k1PrivateKey,
+    vdrKey: Secp256k1PrivateKey,
     keyName: String = "vdr1",
     workdir: String = "../../prism-vdr/mainnet"
 ) extends Driver {
+
   // implement methods here (or use stub for now)
   def getFamily: String = "PRISM"
   def getIdentifier: String = "PRISMDriver"
@@ -41,14 +51,15 @@ case class PRISMDriver(
       data: Array[Byte],
       options: java.util.Map[String, ?]
   ): interfaces.Driver.OperationResult = {
-    GenericVDRDriver.runProgram(
+    PRISMDriver.runProgram(
       for {
         ret <- genericVDRDriver.createBytesEntry(data)
+        (refVDR, txHash) = ret
         out = Driver.OperationResult(
-          ret._1.value,
+          refVDR.hex,
           Driver.OperationState.SUCCESS,
-          Array(ret._1.value),
-          Map(("h", ret._1.value)).asJava,
+          Array(refVDR.hex),
+          Map(("h", refVDR.hex)).asJava,
           null,
           null,
           null
@@ -71,10 +82,10 @@ case class PRISMDriver(
         ) // interfaces.Driver.OperationResult
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
-        GenericVDRDriver.runProgram(
+        PRISMDriver.runProgram(
           for {
             ret <- genericVDRDriver.updateBytesEntry(eventRef, data)
-            (updateEventHash, code, string) = ret
+            (updateEventHash, txHash) = ret
             out = Driver.OperationResult(
               updateEventHash.hex,
               Driver.OperationState.SUCCESS,
@@ -101,10 +112,10 @@ case class PRISMDriver(
         ) // interfaces.Driver.OperationResult
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
-        GenericVDRDriver.runProgram(
+        PRISMDriver.runProgram(
           for {
-            ret <- genericVDRDriver.deleteBytesEntry(eventRef)
-            (updateEventHash, code, string) = ret
+            ret <- genericVDRDriver.deactivateEntry(eventRef)
+            (updateEventHash, txHash) = ret
             out = Driver.OperationResult(
               updateEventHash.hex,
               Driver.OperationState.SUCCESS,
@@ -128,9 +139,9 @@ case class PRISMDriver(
       case None => Array.empty()
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
-        GenericVDRDriver.runProgram(
+        PRISMDriver.runProgram(
           for {
-            vdr <- genericVDRDriver.read(eventRef)
+            vdr <- genericVDRDriver.fetchEntry(eventRef)
           } yield vdr.data match {
             case VDR.DataEmpty()              => Array.empty()
             case VDR.DataDeactivated(data)    => Array.empty()
@@ -160,9 +171,9 @@ case class PRISMDriver(
       case None => ???
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
-        GenericVDRDriver.runProgram(
+        PRISMDriver.runProgram(
           for {
-            vdr <- genericVDRDriver.read(eventRef)
+            vdr <- genericVDRDriver.fetchEntry(eventRef)
           } yield vdr.data match {
             case VDR.DataEmpty() =>
               Proof("PrismBlock", Array.empty(), Array.empty()) // TODO proof
