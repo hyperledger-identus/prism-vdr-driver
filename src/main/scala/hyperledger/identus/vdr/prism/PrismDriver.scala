@@ -27,6 +27,12 @@ case class PRISMDriver(
     workdir: String = "../../prism-vdr/mainnet"
 ) extends Driver {
 
+  def initProgram = {
+    genericVDRDriver.initState
+    // TODO (nice to have) check the status of the SSI and the key (see if it's a valid key)
+  }
+  PRISMDriver.runProgram(initProgram) // run the init program when the class is created
+
   // implement methods here (or use stub for now)
   def getFamily: String = "PRISM"
   def getIdentifier: String = "PRISMDriver"
@@ -43,9 +49,6 @@ case class PRISMDriver(
       vdrKey,
       maybeMsgCIP20 = Some(getIdentifier)
     )
-
-  genericVDRDriver.initState
-  // TODO (nice to have) check the status of the SSI and the key (see if it's a valid key)
 
   override def create(
       data: Array[Byte],
