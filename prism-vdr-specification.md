@@ -11,7 +11,7 @@ It uses the blockchain transaction metadata to record verifiable information tha
 The fundamental building block of this VDR is the creation of a Self-Sovereign Identity (SSI) on the Cardano blockchain.
 This SSI-based model is as decentralized and distributed as the underlying Cardano ledger itself.
 
-The this VDR protocol specifies events/operations, serialization formats, and lifecycle management rules for the VDR entries.
+This VDR protocol specifies events/operations, serialization formats, and lifecycle management rules for the VDR entries.
 A VDR node or VDR indexer refers to software implementing this specification.
 
 This protocol has the same foundation already used by the [`did:prism` DID method](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md), which follows the [DID Core Specification](https://www.w3.org/TR/did-core/) to define Decentralized Identifiers (DIDs) on top of this Cardano VDR.
@@ -36,14 +36,14 @@ Notes:
 - `PRISM_LABEL` is used by:
   - `did:prism` method - [prism-did-method-spec](https://github.com/input-output-hk/prism-did-method-spec/).
   - PRISM CredentialBatch - Specification is not public.
-  - Anyone else that want to for whatever reason.
+  - Anything that anyone wants to, for whatever reason.
 - The `CRYPTOGRAPHIC_CURVE` is the key type used by the master key.
   It follows the guidance of [CIP-0016 - Cryptographic Key Serialisation Formats](https://github.com/cardano-foundation/CIPs/tree/master/CIP-0016)
 
 ## Events/Operations
 
 The PRISM VDR is composed of a sequence of **immutable** events/operations.
-As the source of truth and order, events/operation are permanently record in the Cardano (mainnet) blockchain transaction metadata.
+As the source of truth and order, the events/operations are permanently recorded in the Cardano (mainnet) blockchain transaction metadata.
 Multiple events/operations can be record in a single blockchain transaction.
 Events/Operations can either be independent or dependent. Forming a chain from previous events/operations.
 Events/operations can be considered valid or invalid, according to the validation algorithm for each category of events.
@@ -84,11 +84,11 @@ The `SSI` entries are only one of the categories of events types supported by th
 #### SSI events type
 There are three types of events/operations for `SSI` entries.
 
-Event Name     | Protubuf | Description
+Event Name     | Protobuf | Description
 -------------- | -------- |-------------
 Create SSI     | `E-1`    | Create a new `SSI` (and `DID`) identifier.
 Update SSI     | `E-2`    | Builds a chain of `SSI` events to update the state of the `SSI` identifier.
-Deactivate SSI | `E-6`    | Deactivate `SSI` identifier. This is a end stat and can no longer be activated.
+Deactivate SSI | `E-6`    | Deactivate `SSI` identifier. This is an end stat and can no longer be activated.
 
 ```mermaid
 ---
@@ -108,11 +108,11 @@ stateDiagram-v2
 - The `E-1` event MUST be signed with the private part of the `MASTER_KEY` it specifies.
 - The identifier of the `SSI` MUST be the hash of the `E-1` event (using `HASH_ALGORITHM`) serves as the unique SSI reference.
 - The `E-2` and `E-6` events MUST be signed by an `MASTER_KEY` listed in the `SSI` at that point in time.
-- The events MUST point to the ``
+- The `E-2-1` and `E-6-1` events MUST point to the `previous_event_hash`. The reference (hash) of the most recent event that was used to create or update the SSI.
 - The `MASTER_KEY` MUST use the curve `SECP256K1_CURVE_NAME`.
 -  Note:
-   The `did:prism` also has a long form which the source of true might not be on the blockchain.
-   <br> The long form identify is related with a canonical form identifier.
+   The `did:prism` also has a long form which the source of truth might not be on the blockchain."
+   <br> The long form identifier is related with a canonical form identifier.
    <br> If the canonical identifier is not on the blockchain then the long form is self contained.
    <br> The `E-1` pure protobuf (without being warped in a signed event) is encoded from the binary representation of the protobuf into `base64URL` and then appended to the end of the canonical form, separated by the character `:`.
    <br> See [**did:prism** specification](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md) for more information.
@@ -122,26 +122,26 @@ stateDiagram-v2
 
 Note: Storage entry depends on the SSI.
 
-For more documentation ref to [**prism:did specs**](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md).
+For more documentation refer to [**prism:did specs**](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md).
 
 To summarize, a DID is valid only when its underlying SSI has been created `#E-1` and not deactivate `#E-6`.
 The DID Document is a simplified representation of the SSI's latest status.
-That does not contains the `MASTER_KEY`; `ISSUING_KEY`; `VDR_KEY`.
+That does not contain the `MASTER_KEY`; `ISSUING_KEY`; `VDR_KEY`.
 
-Note: There are usa case where the SSI entry is not used as a DID. For example if you cares about managing Storage Entry.
-The Prism Indexer MUST still be able to resolve that DID, even is the only field in the DID Document is the `id` of the DID it self.
+Note: There are use case where the SSI entry is not used as a DID. For example if you cares about managing Storage Entry.
+The Prism Indexer MUST still be able to resolve that DID, even if the only field in the DID Document is the `id` of the DID it self.
 
 So `{"id":"did:prism:00592a141a4c2bcb7a6aa691750511e2e9b048231820125e15ab70b12a210aae"}` its a valid DID Document.
 
 ### Storage entry
 
-The Storage entries allow to record small amount of information that represents mutable data.
-The record information is persistent, public and is limited by Cardano metadata's constraints.
+The Storage entries allow recording a small amount of information that represents mutable data.
+The recorded information is persistent, public and is limited by Cardano metadata's constraints.
 
 The Storage Entries form a chain like SSI entries (create → update ... → deactivate)
 
 There are three types of events/operations over **Storage Entries** (see protobuf definition):
-Event Name               | Protubuf | Description
+Event Name               | Protobuf | Description
 ------------------------ | -------- |-------------
 Create Storage entry     | `E-7`    | Create a new storage entry. Where the identifier is the `HASH_ALGORITHM` of the protobuf.
 Update Storage entry     | `E-8`    | Builds a chain on a storage entry to update the state of that entry.
@@ -184,7 +184,7 @@ stateDiagram-v2
     UnknownState --> Deactivated: E-6
 ```
 
-The Unknown State it only exists on the PRISM Indexer implementation. 
+The Unknown State only exists on the PRISM Indexer implementation. 
 It covers future extension of this protocol and represents either an Active or Deactivated state.
 
 #### Validation rules
@@ -193,12 +193,12 @@ For the Storage Events (`E-7`, `E-8`, `E-9`) to be considered valid, they must m
 - All protobuf fields from `1...49` MUST be consider in the validation process in `E-7`, `E-8`, `E-9`.
   - At least one field must be present.
   - Any missing field from the port above is considered valid.
-  - If `E-7-1` is presente the event must be signed by the owner's key, using:
+  - If `E-7-1` is present the event must be signed by the owner's key, using:
     - the state of the `SSI` the moment before the event. (all and only the events before the one that is being validated)
     - the `SIGNATURE_ALGORITHM`
     - the curve `SECP256K1_CURVE_NAME`
     - the purpose `#KeyUsage-8` (VDR_KEY)
-  - In `E-8`, `E-9` fields `2`(`E-8-2`) and `3`(`E-9-2`) must be present and point the reference of the latest valid event for that identify.
+  - In `E-8`, `E-9` fields `2`(`E-8-2`) and `3`(`E-9-2`) must be present and point the reference of the latest valid event for that identifier.
   - Field `E-7-3...49` are reserved for future extension of this protocol.
     <br> (Note a PRISM Indexer can still index and serve a requester all raw events about any storage entry without validating them or resolve the content of the data. See section below)
 - the keys used must be present in the SSI at the time of the event. (Key rotation after the event does not invalidate the Storage Entries.)
@@ -207,15 +207,15 @@ For the Storage Events (`E-7`, `E-8`, `E-9`) to be considered valid, they must m
 **Notes about the protobuf structure:**
 - For convenience, the three messages share a common subset of fields. This ensures that if the protobuf messages were merged, the field positions and their meanings would remain consistent.
 - The fields from `1` to `49` of the protobuf message is used for validation.
-  Although at the moment only field 1 is defined at the time of writting.
+  Although at the moment only field 1 is defined at the time of writing.
   - Field `1` its the owner of the entry - the specificId of the `did:prism`.
 - The fields from `50` to `99` of the protobuf message is used for metadata.
-  Although at the moment only field 50 is defined at the time of writting.
+  Although at the moment only field 50 is defined at the time of writing.
   - Field `50` its a nonce - can be used to generate different reference hash in the create event
     It allowed to make different entries with the same initial data possible.
 
 
-The distinguish between metadata and validation vields is important for any VDR PRISM Indexer implementation.
+The distinguish between metadata and validation fields is important for any VDR PRISM Indexer implementation.
 If the validation fields is present MUST be considered for the validation on the event.
 In the case the PRISM Indexer doesn't know the rules for the field it cannot consider the event valid or invalid.
 Consequently, cannot resolve the content of the data if any of those skills are defined in a chain of events
@@ -229,7 +229,7 @@ Users of the indexer SHOULD always have the opportunity to get all the associate
 The encode method of the Storage Entry may be defined by the create event/operation, depending on the protobuf field used:
  the data, the following types of information/data may be stored:
 
-Type of Data                    | Protubufs           | Represents
+Type of Data                    | Protobufs           | Represents
 ------------------------------- | ------------------- |-------------
  **bytes**                      | `E-7-100`,`E-8-100` | A raw array of bytes.
 **CID (content identifier)**    | `E-7-101`,`E-8-101` | A reference to an IPFS document.
@@ -240,9 +240,9 @@ Type of Data                    | Protubufs           | Represents
 ##### Storage Entry - bytes (`E-7-100` & `E-8-100`)
 
 This data type is designed to represent array of bytes.
-To create the entry simple. 
-The field `E-7-100` is the inicial array of bytes (protobuf type `bytes`) that the content of this entry will have.
-The field `E-8-100` is a array of bytes (protobuf type `bytes`) and will replace the previous content of the state with the new.
+To create the entry is simple.
+The field `E-7-100` is the initial array of bytes (protobuf type `bytes`) that the content of this entry will have.
+The field `E-8-100` is an array of bytes (protobuf type `bytes`) and will replace the previous content of the state with the new.
 
 ##### Storage Entry - IPFS CID (`E-7-101` & `E-8-101`)
 
@@ -250,15 +250,15 @@ This data type represented the **CID (content identifier)** of a document that s
 
 Note: 
 This protocol (PRISM VDR) only stores a CID as the content.
-They real content should be retrieved from a IPFS Gateway.
+They real content should be retrieved from an IPFS Gateway.
 
 **Security considerations** - 
-The **CID** is a reference to immutable data but also a hash of the data it self.
+The **CID** is a reference to immutable data but also a hash of the data itself.
 So it is recommended that when retrieving the data to verify this is the real data corresponding to that CID.
 
 **Data Persistence considerations** -
 Since **IPFS** relies on nodes voluntarily storing data, there is no guarantee that data will be stored permanently.
-So for some use cases the actors may consider pining the data thyself in order to guarantee the Data Persistence.
+So for some use cases the actors may consider pining the data themselves in order to guarantee the Data Persistence.
 
 
 ##### [WIP] Storage Entry - Token Status List
@@ -272,7 +272,7 @@ The
 ## Document History
 
 0. Initial draft.
-1. Fix typos and incorporate recomendation from reviews.
+1. Fix typos and incorporate recommendations from reviews.
 
 ## Authors and Contributors
 
@@ -379,7 +379,7 @@ KeyUsage : #KeyUsage-8 VDR_KEY
 
 
 
-## Axexos
+## Appendices
 
 ### File 'prism.proto'
 
@@ -402,7 +402,7 @@ message PrismObject {
 }
 
 /**
- * Represent a block that holds evetns/operations.
+ * Represent a block that holds events/operations.
  */
  message PrismBlock {
   reserved 1; // Represents the version of the block. Deprecated
@@ -635,7 +635,7 @@ message PatchContextAction {
 
 /** StorageEventCreateEntry
  * To be valid, this operation needs to be signed by an issuing key of the DID:
- * - 1) The issuing key need to be valid at the Event/Operation momment
+ * - 1) The issuing key need to be valid at the Event/Operation moment
  * - 2) The DID needs not to be Deactivate
  */
 message ProtoCreateStorageEntry {
@@ -653,8 +653,8 @@ message ProtoCreateStorageEntry {
 }
 
 /** StorageEventUpdateEntry
- * To be valid, this operation needs to be signed by an issuing key of the DID:
- * - 1) The issuing key need to be valid at the Event/Operation momment
+ * To be valid, this event needs to be signed by an issuing key of the DID:
+ * - 1) The issuing key need to be valid at the Event/Operation moment
  * - 2) The DID needs not to be Deactivate
  */
 message ProtoUpdateStorageEntry {
@@ -717,7 +717,7 @@ message CredentialBatchData {
   
 // Specifies the credentials to revoke (the whole batch, or just a subset of it).
 message ProtoRevokeCredentials {
-  bytes previous_operation_hash = 1; // The hash of the operation that issued the batch.
+  bytes previous_event_hash = 1; // The hash of the event that issued the batch.
   string credential_batch_id = 2; // The corresponding batch ID, as returned in IssueCredentialBatchResponse.
   repeated bytes credentials_to_revoke = 3; // The hashes of the credentials to revoke. If empty, the full batch is revoked.
 }
@@ -730,9 +730,9 @@ message ProtoRevokeCredentials {
 We are increasing the capabilities of the PRISM VDR!
 PRISM VDR is a generalization of the PRISM DID!
 
-This VDR was a notion of Cardano time.
-The Cardano blockchain was boxs of transactions. Each transaction can have metadata with a PRISM Block. Each PRISM block can have a Sequence of Sign Operations.
-So all PRISM operations was an order between them.
+This VDR follows the notion of Cardano time.
+The Cardano blockchain was chain of blocks of transactions. Each blocks was multiple transactions. Each transaction can have metadata with a PRISM Block. Each PRISM block can have a Sequence of Sign Events.
+So all PRISM events was an order between them.
 
 https://github.com/input-output-hk/prism-did-method-spec/issues/46
 
@@ -743,36 +743,36 @@ https://github.com/input-output-hk/prism-did-method-spec/issues/46
 
 Design goals:
 - The Indexer MUST be deterministic.
-- The Indexer MUST be able to rever all steps to a previous `Cardano Block`.
+- The Indexer MUST be able to revert all steps to a previous `Cardano Block`.
   Ideally, we recommend that the index is able to backtrack all the steps and unapply. 
-- It's not responsibility of the Indexer to validate the signature of the PRISM Operation.
+- It's not responsibility of the Indexer to validate the signature of the PRISM Event.
 - The Indexer is discribed for the general use case.
 
 
 ### Storage entries
 
-Each entry is by definition unique `Protubuf data of the PRISM Operation` + `Operation Order index (age of the operation)`
-All correct formated 'PrismObject' Protocol
+Each entry is by definition unique `Protobuf data of the PRISM Event` + `Event Order index (age of the event)`
+All correctly formatted 'PrismObject' Protocol
 
 ### Storage entries
 
-Each entry is by definition unique `Protubuf data of the PRISM Operation` + `Operation Order index (age of the operation)`
-All correct formated 'PrismObject' Protocol
+Each entry is by definition unique `Protobuf data of the PRISM Event` + `Event Order index (age of the event)`
+All correctly formatted 'PrismObject' Protocol
 
-### Operation Order Index (unique index entries)
+### Event Order Index (unique index entries)
   
 The goal is to index all the blockchain metadata (with PRISM_LABEL) and with a PrismObject
 
-Index: **`'block_height' - Cardano Block index` + `Trasation index` + `PRISM Operation index`** into a Hash of the PRISM Operation
+Index: **`'block_height' - Cardano Block index` + `Transaction index` + `PRISM Event index`** into a Hash of the PRISM Event
 
-### PRISM Operation Hash Index (index over the storage entries but is not unique)
+### PRISM Event Hash Index (index over the storage entries but is not unique)
 
-The goal is to have all PRISM Operation
+The goal is to have all PRISM Event
 
-Index: the Hash of the PRISM Operation into the entry.
+Index: the Hash of the PRISM Event into the entry.
 
-The index is not unique because anyone can submit multiple times (but will have `Operation Order index`).
-Although we only care about the oldest operation in the blockchain.
+The index is not unique because anyone can submit multiple times (but will have `Event Order index`).
+Although we only care about the oldest event in the blockchain.
 
 ###  Self-sovereign identity (SSI) index
 
@@ -788,22 +788,22 @@ The amount of information/data on the Storage Entry is SHOULD be relatively smal
 
 There are different types of information, from Raw Byte to specific cases.
 
-The creation of a Storage Entry is associated one SSI entry (the onwer).
+The creation of a Storage Entry is associated one SSI entry (the owner).
 Any  must be .
 For the Storage Events (CreateStorage/UpdateStorage) to be valid it must:
 - have a valid signature.
-- be signed by onwer's key
+- be signed by owner's key
   - using the $SIGNATURE_ALGORITHM
   - with the curve $SECP256K1_CURVE_NAME
   - with the purpose KeyUsage 8 (VDR_KEY)
 - have the keys presented on the SSI, at the time of the Event. (So rotating the key after does not invalidated the Storage entries.)
-- the SSI (onwer) must not be deactivated.
+- the SSI (owner) must not be deactivated.
 
 
 #### Storage Create Event
 
 This Event event create a Storage Entry.
-The storage owne by the `ssi_ref (1)`
+The storage owner by the `ssi_ref (1)`
 The hash of this Event will be used as the reference/id of this entry.
 
 ```proto
@@ -815,9 +815,9 @@ message StorageEventCreateEntry {
 }
 ```
 
-#### Storage Update Operations
+#### Storage Update Event
 
-The Update event modifi/update the Storage Entries.
+The Update event modify/update the Storage Entries.
 
 ```proto
 message StorageEventUpdateEntry {
@@ -936,12 +936,12 @@ gitGraph TB:
 
 ### Algorithm SSI object from the sequence of events.
 
-Any Self-Sovereign Identity in this VDR is sequence of Events/Operations that form a chain.
+Any Self-Sovereign Identity in this VDR is a sequence of Events/Operations that form a chain.
 The frist element of the chain MUST contain the `E-1` create identity event.
 The HASH of the `SignedPrismEvent` with the `E-1` is the reference of the SSI.
-The signature in `SignedPrismEvent #2` in sign by one of the MASTER_KEY type `KeyUsage-1` contain the create Event `E-1`. So it is Self sign.
+The signature in `SignedPrismEvent` is self sign. Signed by one of the MASTER_KEY type `KeyUsage-1` contained in the create event `E-1`.
 
-Lets consider the folowing class. This is just a example to ilustrate the transformation of the set of events chain into a object that represent all the information of the SSI.
+Lets consider the following class. This is just an example to ilustrate the transformation of the set of events chain into an object that represent all the information of the SSI.
 
 
 
@@ -958,8 +958,8 @@ class Keys
 ```
 
 The fileds `public_keys`; `services`; `context` are a direnct copy of the create event `E-1`
-Note the public Master keys and public VDR keys MUST be of the keys of the type `SECP256K1_CURVE_NAME`. Those keys will be used by the PRISM Node, PRISM Indexer and othets libs to validate the chains of each SSI.
-If another curve is used on those keys, the keys Should be igored.
+Note the public Master keys and public VDR keys MUST be of the keys of the type `SECP256K1_CURVE_NAME`. Those keys will be used by the PRISM Node, PRISM Indexer and others libs to validate the chains of each SSI.
+If another curve is used on those keys, the keys Should be ignored.
 
 On saction ???? with will describe how to converted from this SSI struture into the DID Document. 
 
