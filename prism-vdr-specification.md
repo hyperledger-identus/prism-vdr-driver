@@ -233,8 +233,6 @@ Type of Data                    | Protobufs           | Represents
 ------------------------------- | ------------------- |-------------
  **bytes**                      | `E-7-100`,`E-8-100` | A raw array of bytes.
 **CID (content identifier)**    | `E-7-101`,`E-8-101` | A reference to an IPFS document.
-[WIP] **bitstring_status_list** | `E-7-???`,`E-8-???` | A status list, as defined by https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/10/
-[WIP] **bitstring_status_list** | `E-7-???`,`E-8-???` | A status list, as defined by ???
 
 
 ##### Storage Entry - bytes (`E-7-100` & `E-8-100`)
@@ -258,14 +256,6 @@ Therefore, it is recommended that when retrieving the data and verify that this 
 **Data Persistence considerations** -
 Since **IPFS** relies on nodes voluntarily storing data, there is no guarantee that data will be stored permanently.
 For some use cases, the actors may consider pinning the data themselves to guarantee data persistence.
-
-
-##### [WIP] Storage Entry - Token Status List
-
-This data type is designed to represent a status list, as defined by https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/10/
-
-To create a Storage Entry of this type, the `E-7` must have the field `E-7-??` defined.
-The 
 
 
 ## Indexer
