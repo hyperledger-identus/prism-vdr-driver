@@ -101,7 +101,7 @@ stateDiagram-v2
     [*] --> Nonexistent
     Nonexistent --> Active: E-1
     Active --> Active: E-2
-    Active --> Deactivated: E-3
+    Active --> Deactivated: E-6
 ```
 
 #### Validation rules:
