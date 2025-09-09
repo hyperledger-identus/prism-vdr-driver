@@ -96,7 +96,7 @@ title: SSI entry state machine
 ---
 stateDiagram-v2
     Nonexistent: Nonexistent identifier
-    Active: Active SSI/DID
+    Active: SSI/DID exist
     Deactivated: Deactivated SSI
     [*] --> Nonexistent
     Nonexistent --> Active: E-1
@@ -177,11 +177,11 @@ stateDiagram-v2
     Nonexistent --> Active: E-7
     Active --> Active: E-8
     Active --> Deactivated: E-9
-    Active --> Deactivated: E-6
+    Active --> Deactivated: E-6 (of owner)
     Active --> UnknownState: E-8 or E-9 (with unknown validation field)
     Nonexistent --> UnknownState: E-7 (with unknown validation field)
     UnknownState --> UnknownState: E-8 and E-9
-    UnknownState --> Deactivated: E-6
+    UnknownState --> Deactivated: E-6 (of owner)
 ```
 
 The not no Unknown State only exists on the PRISM Indexer implementation. (See the section #Indexer)
