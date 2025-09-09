@@ -16,7 +16,7 @@ A VDR node or VDR indexer refers to software implementing this specification.
 
 This protocol has the same foundation already used by the [`did:prism` DID method](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md), which follows the [DID Core Specification](https://www.w3.org/TR/did-core/) to define Decentralized Identifiers (DIDs) on top of this Cardano VDR.
 
-We would like to remark that any reference to the blockchain, such as "Cardano network", "underlying chain", "on-chain", "ledger", "the blockchain", and similar ones throughout this document, refers to the Cardano mainnet unless explicitly said otherwise.
+We would like to remark that any reference to the blockchain, such as "Cardano network", "underlying chain", "blockchain", and similar ones throughout this document, refers to the Cardano mainnet unless explicitly said otherwise.
 The prism DID method, in its current form, solely depends on and uses the Cardano mainnet.
 
 ## Protocol parameters
