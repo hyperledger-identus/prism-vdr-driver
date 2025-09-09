@@ -11,7 +11,7 @@ It uses the blockchain transaction metadata to record verifiable information tha
 The fundamental building block of this VDR is the creation of a Self-Sovereign Identity (SSI) on the Cardano blockchain.
 This SSI-based model is as decentralized and distributed as the underlying Cardano ledger itself.
 
-This VDR protocol specifies events/operations, serialization formats, and lifecycle management rules for the VDR entries.
+This VDR protocol specifies events, serialization formats, and lifecycle management rules for the VDR entries.
 A VDR node or VDR indexer refers to software implementing this specification.
 
 This protocol has the same foundation already used by the [`did:prism` DID method](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md), which follows the [DID Core Specification](https://www.w3.org/TR/did-core/) to define Decentralized Identifiers (DIDs) on top of this Cardano VDR.
@@ -316,13 +316,13 @@ class PrismEvent
 
 
 PrismEvent : SSI
-PrismEvent : #E-1 - CreateDIDOperation create_did
-PrismEvent : #E-2 - UpdateDIDOperation update_did
-PrismEvent : #E-6 - DeactivateDIDOperation deactivate_did
+PrismEvent : #E-1 - ProtoCreateDID create_did
+PrismEvent : #E-2 - ProtoUpdateDID update_did
+PrismEvent : #E-6 - ProtoDeactivateDID deactivate_did
 PrismEvent : Storage
-PrismEvent : #E-7 - CreateStorageEntryOperation create_storage_entry
-PrismEvent : #E-8 - UpdateStorageEntryOperation update_storage_entry
-PrismEvent : #E-9 - ???? 
+PrismEvent : #E-7 - ProtoCreateStorageEntry create_storage_entry
+PrismEvent : #E-8 - ProtoUpdateStorageEntry update_storage_entry
+PrismEvent : #E-9 - ProtoDeactivateStorageEntry deactivate_storage_entry
 PrismEvent : ---
 PrismEvent : #E-3 - IssueCredentialBatchOperation issue_credential_batch
 PrismEvent : #E-4 - RevokeCredentialsOperation revoke_credentials
@@ -333,8 +333,8 @@ PrismEvent : #E-5 - ProtocolVersionUpdateOperation protocol_version_update
 ```mermaid
 classDiagram
 
-class CreateDIDOperation
-CreateDIDOperation : #E-1-1 - DIDCreationData did_data
+class ProtoCreateDID
+ProtoCreateDID : #E-1-1 - DIDCreationData did_data
 DIDCreationData : #E-1-1-2 - PublicKey public_keys
 DIDCreationData : #E-1-1-3 - Service services
 DIDCreationData : #E-1-1-4 - string context
@@ -343,10 +343,10 @@ DIDCreationData : #E-1-1-4 - string context
 
 ```mermaid
 classDiagram
-class UpdateDIDOperation
-UpdateDIDOperation : #E-2-1 - bytes previous_operation_hash
-UpdateDIDOperation : #E-2-2 - string id
-UpdateDIDOperation : #E-2-3 - [UpdateDIDAction] actions
+class ProtoUpdateDID
+ProtoUpdateDID : #E-2-1 - bytes previous_operation_hash
+ProtoUpdateDID : #E-2-2 - string id
+ProtoUpdateDID : #E-2-3 - [UpdateDIDAction] actions
 
 class UpdateDIDAction
 UpdateDIDAction : #E-3-1 - AddKeyAction add_key // Used to add a new key to the DID.
@@ -359,9 +359,35 @@ UpdateDIDAction : #E-3-6 - PatchContextAction patch_context // Used to update a 
 
 ```mermaid
 classDiagram
-class DeactivateDIDOperation
-DeactivateDIDOperation : #E-6-1 - bytes previous_operation_hash
-DeactivateDIDOperation : #E-6-2 - string id // DID Suffix of the DID to be deactivated
+class ProtoDeactivateDID
+ProtoDeactivateDID : #E-6-1 - bytes previous_operation_hash
+ProtoDeactivateDID : #E-6-2 - string id // DID Suffix of the DID to be deactivated
+```
+
+```mermaid
+classDiagram
+class ProtoCreateStorageEntry
+ProtoCreateStorageEntry: #E-7-1 did_prism_hash - The specificId of the did prism.
+ProtoCreateStorageEntry: #E-7-50 nonce - The specificId of the did prism.
+
+ProtoCreateStorageEntry: #E-7-100 bytes - (DATA) represents an encoded array of bytes
+ProtoCreateStorageEntry: #E-7-101 ipfs - (DATA) represents an encoded CID
+```
+
+```mermaid
+classDiagram
+class ProtoUpdateStorageEntry
+ProtoUpdateStorageEntry: #E-8-2 previous_event_hash - The hash of the most recent event of VDR entry.
+
+ProtoUpdateStorageEntry: #E-8-100 bytes - (DATA) represents an encoded array of bytes
+ProtoUpdateStorageEntry: #E-8-101 ipfs - (DATA) represents an encoded CID
+```
+
+
+```mermaid
+classDiagram
+class ProtoDeactivateDID
+ProtoDeactivateDID : #E-7-2 previous_event_hash - The hash of the most recent event of VDR entry.
 ```
 
 ```
@@ -382,18 +408,13 @@ KeyUsage : #KeyUsage-8 VDR_KEY
 ### File 'prism.proto'
 
 ```proto
-import "prism-credential-batch.proto";
-import "prism-version.proto";
-import "prism-ssi.proto";
-import "prism-storage.proto";
-
 /**
- * Wraps a PrismBlock and its metadata.
+ * Wraps an PrismBlock and its metadata.
  */
 message PrismObject {
   reserved 1, 2, 3; 
   reserved "block_hash";
-  reserved "block_operation_count"; // Number of operations in the block.
+  reserved "block_event_count"; // Number of events in the block.
   reserved "block_byte_length"; // Byte length of the block.
   
   PrismBlock block_content = 4; // The block content.
@@ -404,23 +425,23 @@ message PrismObject {
  */
  message PrismBlock {
   reserved 1; // Represents the version of the block. Deprecated
-  repeated SignedPrismOperation operations = 2; // A signed operation, necessary to post anything on the blockchain.
+  repeated SignedPrismEvent events = 2; // A signed event, necessary to post anything on the blockchain.
   }
   
-// A signed operation, necessary to post anything on the blockchain.
-message SignedPrismOperation {
-  string signed_with = 1; // The key ID used to sign the operation; it must belong to the DID that signs the operation.
+// A signed event, necessary to post anything on the blockchain.
+message SignedPrismEvent {
+  string signed_with = 1; // The key ID used to sign the event, it must belong to the DID that signs the event.
   bytes signature = 2; // The actual signature.
-  PrismOperation operation = 3; // The operation that was signed.
+  PrismEvent event = 3; // The event that was signed.
 }
 
 
 // The possible events affecting the blockchain.
-message PrismOperation {
+message PrismEvent {
   // https://github.com/input-output-hk/atala-prism-sdk/blob/master/protosLib/src/main/proto/node_models.proto
   //  reserved 3, 4; // fields used by an extension of the protocol. Not relevant for the DID method
-   // The actual operation.
-  oneof operation {
+  // The actual event.
+  oneof event {
     // Used to create a public DID.
     ProtoCreateDID create_did = 1;
 
@@ -433,7 +454,7 @@ message PrismOperation {
     // Used to revoke a credential batch.
     ProtoRevokeCredentials revoke_credentials = 4;
 
-    // Used to announce a new protocol update
+    // Used to announce new protocol update
     ProtoProtocolVersionUpdate protocol_version_update = 5;
 
     // Used to deactivate DID
@@ -449,6 +470,7 @@ message PrismOperation {
     ProtoDeactivateStorageEntry deactivate_storage_entry = 9;
   };
 }
+
 ```
 
 ### File 'prism-version.proto'
@@ -482,13 +504,14 @@ message ProtocolVersionInfo {
 
 ### File 'prism-ssi.proto'
 ```proto
-// The operation to create a public DID.
+
+// The event to create a public DID.
 message ProtoCreateDID {
   DIDCreationData did_data = 1; // DIDCreationData with public keys and services
 
   // The data necessary to create a DID.
   message DIDCreationData {
-    reserved 1; // Removed DID id field, which is empty on creation
+    reserved 1; // Removed DID id field which is empty on creation
     repeated PublicKey public_keys = 2; // The keys that belong to this DID Document.
     repeated Service services = 3; // The list of services that belong to this DID Document.
     repeated string context = 4; // The list of @context values to consider on JSON-LD representations
@@ -497,13 +520,13 @@ message ProtoCreateDID {
 
 // Specifies the necessary data to update a public DID.
 message ProtoUpdateDID {
-  bytes previous_operation_hash = 1; // The hash of the most recent operation that was used to create or update the DID.
-  string id = 2; // @exclude TODO: To be redefined after we start using this operation.
+  bytes previous_event_hash = 1; // The hash of the most recent event that was used to create or update the DID.
+  string id = 2; // @exclude TODO: To be redefined after we start using this event.
   repeated UpdateDIDAction actions = 3; // The actual updates to perform on the DID.
 }
 
 message ProtoDeactivateDID {
-  bytes previous_operation_hash = 1; // The hash of the most recent operation that was used to create or update the DID.
+  bytes previous_event_hash = 1; // The hash of the most recent event that was used to create or update the DID.
   string id = 2; // DID Suffix of the DID to be deactivated
 }
 
@@ -526,7 +549,7 @@ message PublicKey {
 
 // Every key has a single purpose:
 enum KeyUsage {
-  // UNKNOWN_KEY is an invalid value - Protobuf uses 0 if no value is provided, and we want the user to explicitly choose the usage.
+  // UNKNOWN_KEY is an invalid value - Protobuf uses 0 if no value is provided and we want the user to explicitly choose the usage.
   UNKNOWN_KEY = 0;
   MASTER_KEY = 1;
   ISSUING_KEY = 2;
@@ -535,10 +558,7 @@ enum KeyUsage {
   REVOCATION_KEY = 5;
   CAPABILITY_INVOCATION_KEY = 6;
   CAPABILITY_DELEGATION_KEY = 7;
-
-
-  // !!!!!!!!!!!!!!!!!!!!!!
-  VDR_KEY = 8; // Create, Update, Remove - VDR entries. This key does not appear in the document.
+  VDR_KEY = 8; // Create, Update, Remove - VDR entries. This key does not appear in the DID document.
 }
 
 /**
@@ -551,22 +571,18 @@ enum KeyUsage {
 }
 
 /**
- * Holds the compressed representation of data needed to recover the Elliptic Curve (EC)'s public key.
+ * Holds the compressed representation of data needed to recover Elliptic Curve (EC)'s public key.
  */
 message CompressedECKeyData {
   string curve = 1; // The curve name, like secp256k1.
   bytes data = 2; // compressed Elliptic Curve (EC) public key data.
 }
 
-// ##########
-
 message Service {
   string id = 1;
   string type = 2;
   string service_endpoint = 3;
 }
-
-// ##########
 
 // The potential details that can be updated in a DID.
 message UpdateDIDAction {
@@ -577,11 +593,10 @@ message UpdateDIDAction {
     RemoveKeyAction remove_key = 2; // Used to remove a key from the DID.
     AddServiceAction add_service = 3; // Used to add a new service to a DID,
     RemoveServiceAction remove_service = 4; // Used to remove an existing service from a DID,
-    UpdateServiceAction update_service = 5; // Used to update a list of service endpoints of a given service on a given DID.
-    PatchContextAction patch_context = 6; // Used to update a list of `@context` strings used during resolution for a given DID.
+    UpdateServiceAction update_service = 5; // Used to Update a list of service endpoints of a given service on a given DID.
+    PatchContextAction patch_context = 6; // Used to Update a list of `@context` strings used during resolution for a given DID.
   }
 }
-
 
 // The necessary data to add a key to a DID.
 message AddKeyAction {
@@ -610,6 +625,7 @@ message UpdateServiceAction {
 message PatchContextAction {
   repeated string context = 1; // The list of strings to use by resolvers during resolution when producing a JSON-LD output
 }
+
 ```
 
 ### File 'prism-storage.proto'
@@ -618,83 +634,59 @@ message PatchContextAction {
 
 /* Notes:
  *
- * A Storage Event can be one of the three types:
+ * A Storage Event can be one of three types:
  *  - ProtoCreateStorageEntry
  *  - ProtoUpdateStorageEntry
  *  - ProtoDeactivateStorageEntry
  * Those three types/structures are independent. But at the same time (just for implementation convenience),
- *   They shared a common structure/field position.
+ *   they shared a common structure / field positions.
  *
- * The fields from positions 1 and 2 are reserved and used in the validation process of the Storage Events (now).
- * The fields from position 3 to 49 are reserved to be used in the validation process of the Storage Events (in the future).
- *   If one of those fields/position are present (in a valid event) the Indexer MUST consider the Storage Entry and unsupported (no valid) from that moment, forward.
- * The fields from position 50 to 99 are for adding relevant metadata that does not impact the validation process of the Storage Events.
+ * The fields from positions 1 and 2 are reserved and used in the validation process of the Storage Events (currently).
+ * The fields from positions 3 to 49 are reserved to be used in the validation process of the Storage Events (in the future).
+ *   If one of those fields/position are present (in a valid event) the Indexer MUST consider the Storage Entry unsupported (not valid) from that moment, forward.
+ * The fields from positions 50 to 99 are for adding relevant metadata that does not impact the validation process of the Storage Events.
  */
 
 /** StorageEventCreateEntry
- * To be valid, this operation needs to be signed by an issuing key of the DID:
- * - 1) The issuing key needs to be valid at the Event/Operation moment
- * - 2) The DID does not need to be deactivated
+ * To be valid, this Event MUST be signed by an issuing key of the DID:
+ *   1) The issuing key MUST be valid at the Event moment.
+ *   2) The DID MUST not be Deactivated.
  */
 message ProtoCreateStorageEntry {
-  reserved 2; // Only used by ProtoUpdateStorageEntry & ProtoDeactivateStorageEntry
-  reserved 3 to 49; // Those fields will be used for validating the Storage Events in the future
+  reserved 2; // These positions are reserved by ProtoUpdateStorageEntry & ProtoDeactivateStorageEntry
+  reserved 3 to 49; // These fields will be used for validation the Storage Events in the future
   bytes did_prism_hash = 1; // The specificId of the did:prism.
   bytes nonce = 50; // Used to generate different reference hash (to make different entries with the same initial data possible)
   oneof data {
-    // Nothing // The data field can be missing, representing ANY type
+    // Nothing // The data field MAY be omitted representing ANY type.
     bytes bytes = 100;
-    string ipfs = 101; // CID
-    // string ipns = ??; // https://docs.ipfs.tech/concepts/ipns/
-    StatusListEntry statusListEntry = 102;
+    string ipfs = 101; // The string MUST be a CID.
+
+    // ... future expansions
   }
 }
 
 /** StorageEventUpdateEntry
- * To be valid, this event needs to be signed by an issuing key of the DID:
- * - 1) The issuing key needs to be valid at the Event/Operation moment
- * - 2) The DID does not need to be deactivated
+ * To be valid, this Event MUST be signed by an issuing key of the DID:
+ * - 1) The issuing key MUST be valid at the Event moment.
+ * - 2) The DID MUST not to be Deactivated.
  */
 message ProtoUpdateStorageEntry {
-  reserved 1, 50; // Only used by ProtoCreateStorageEntry
-  reserved 3 to 49; // Those fields will be used for validating the Storage Events in the future
+  reserved 1, 50; // These positions are reserved by ProtoCreateStorageEntry
+  reserved 3 to 49; // These fields will be used for validation the Storage Events in the future
   bytes previous_event_hash = 2; // The hash of the most recent event that was used to create or update the VDR Entry.
-  oneof data { // The data field can be missing
-    // Nothing // The data field can be missing, representing ANY type
+  oneof data {
     bytes bytes = 100; // Replace the bytes
-    string ipfs = 101; // Update/replace the data with a CID to IPFS. This is static data
-    StatusListEntry statusListEntry = 102; // compliments the previous state with just the change (similar to a diff)
+    string ipfs = 101; // Update/replace the data with a CID to IPFS. The string MUST be a CID.
+
+    // ... future expansions
   }
 }
 
 message ProtoDeactivateStorageEntry{
-  reserved 1, 50; // Only used by ProtoCreateStorageEntry
-  reserved 3 to 49; // Those fields will be used for validating the Storage Events in the future
+  reserved 1, 50; // These positions are reserved by ProtoCreateStorageEntry
+  reserved 3 to 49; // These fields will be used for validation the Storage Events in the future
   bytes previous_event_hash = 2; // The hash of the most recent event that was used to create or update the VDR Entry.
-}
-
-// ******************
-// *** DATA TYPES ***
-// ******************
-
-/** TODO WIP Status List entry
- *
- * This is to be inspired by the following specs (Token Status List & BitstringStatusList):
- * - Token Status List:
- *   - https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/:
- *   - https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/06/
- * - BitstringStatusList:
- *   - https://www.w3.org/TR/vc-bitstring-status-list/#bitstringstatuslist
- *   - https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/10/
- */
-message StatusListEntry {
-  int64 state = 1;
-  string name = 2; // optional
-  string details = 3; // optional
-
-  // uint32 listSize = 1;
-  // uint32 statusSize = 2;
-  // bytes intStatus = 3;
 }
 ```
 
