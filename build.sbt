@@ -42,7 +42,7 @@ lazy val V = new {
 
   val identusVDR = "0.2.1"
 
-  val munit = "1.1.1"
+  val munit = "1.2.1"
 
   val zio = "2.1.5"
   val zioJson = "0.7.42"
