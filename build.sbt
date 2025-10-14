@@ -1,6 +1,6 @@
 inThisBuild(
   Seq(
-    scalaVersion := "3.3.6"
+    scalaVersion := "3.3.7"
   )
 )
 // publish config
