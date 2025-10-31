@@ -139,7 +139,7 @@ case class PRISMDriver(
       publicKeys: Array[java.security.PublicKey]
   ): Array[Byte] = {
     paths.headOption match
-      case None => Array.empty()
+      case None       => Array.empty()
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
@@ -171,7 +171,7 @@ case class PRISMDriver(
       returnData: Boolean
   ): interfaces.Proof = {
     paths.headOption match
-      case None => ???
+      case None       => ???
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
@@ -182,7 +182,7 @@ case class PRISMDriver(
               Proof("PrismBlock", Array.empty(), Array.empty()) // TODO proof
             case VDR.DataDeactivated(data) =>
               data match {
-                case VDR.DataEmpty() => throw DataNotInitializedException()
+                case VDR.DataEmpty()           => throw DataNotInitializedException()
                 case VDR.DataDeactivated(data) =>
                   throw DataAlreadyDeactivatedException()
                 case VDR.DataByteArray(byteArray) =>
