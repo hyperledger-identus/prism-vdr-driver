@@ -10,28 +10,73 @@ import interfaces.Proof
 import interfaces.Driver.OperationState
 import fmgp.crypto.Secp256k1PrivateKey
 
+import zio.json._
+import zio.stream.ZStream
+import zio.stream.ZPipeline
+
 object PRISMDriver {
 
   def runProgram[E, A](program: ZIO[Any, E, A]): A =
     Unsafe.unsafe { implicit unsafe =>
       Runtime.default.unsafe.run(program).getOrThrowFiberFailure()
     }
+
+  def loadPrismStateFromChunkFiles: ZIO[IndexerConfig & PrismState, Throwable, PrismState] = for {
+    indexerConfig <- ZIO.service[IndexerConfig]
+    chunkFilesAfter <- fmgp.did.method.prism.vdr.Indexer
+      .findChunkFiles(rawMetadataPath = indexerConfig.rawMetadataPath)
+    _ <- ZIO.log(s"Read chunkFiles (${chunkFilesAfter.length})")
+    streamAllMaybeEventFromChunkFiles = ZStream.fromIterable {
+      chunkFilesAfter.map { fileName =>
+        ZStream
+          .fromFile(fileName)
+          .via(ZPipeline.utf8Decode >>> ZPipeline.splitLines)
+          .map { _.fromJson[CardanoMetadataCBOR].getOrElse(???) }
+          .via(IndexerUtils.pipelineTransformCardanoMetadata2SeqEvents)
+          .flatMap(e => ZStream.fromIterable(e))
+      }
+    }.flatten
+    _ <- ZIO.log(s"Init PrismState")
+    state <- ZIO.service[PrismState]
+    countEvents <- streamAllMaybeEventFromChunkFiles
+      .via(IndexerUtils.pipelinePrismState)
+      .run(IndexerUtils.countEvents) // (ZSink.count)
+      .provideEnvironment(ZEnvironment(state: PrismState))
+    _ <- ZIO.log(s"Finish Init PrismState: $countEvents")
+    ssiCount <- state.ssiCount
+    vdrCount <- state.vdrCount
+    _ <- ZIO.log(s"PrismState was $ssiCount SSI and $vdrCount VDR")
+  } yield state
+
+  def apply(
+      bfConfig: BlockfrostConfig,
+      wallet: CardanoWalletConfig,
+      didPrism: DIDPrism,
+      vdrKey: Secp256k1PrivateKey,
+      // keyName: String = "vdr1",
+      workdir: String = "../../prism-vdr/mainnet"
+  ): PRISMDriver = {
+    val chain: PrismChainService = PrismChainServiceImpl(bfConfig, wallet)
+    val prismState = runProgram(
+      for {
+        prismState <- PrismStateInMemory.empty
+        indexerConfig: IndexerConfig = IndexerConfig(mBlockfrostConfig = Some(bfConfig), workdir = workdir)
+        prismStateLayer = ZLayer.succeed(prismState)
+        indexerConfigLayer = ZLayer.succeed(indexerConfig)
+        _ <- /*IndexerUtils.*/ loadPrismStateFromChunkFiles.provide(prismStateLayer ++ indexerConfigLayer)
+      } yield (prismState)
+    )
+
+    val vdrService: VDRService = VDRServiceImpl(chain, prismState)
+    new PRISMDriver(vdrService, didPrism, vdrKey)
+  }
 }
 
 case class PRISMDriver(
-    val bfConfig: BlockfrostConfig,
-    wallet: CardanoWalletConfig,
+    vdrService: VDRService,
     didPrism: DIDPrism,
     vdrKey: Secp256k1PrivateKey,
-    keyName: String = "vdr1",
-    workdir: String = "../../prism-vdr/mainnet"
 ) extends Driver {
-
-  def initProgram = {
-    genericVDRDriver.initState
-    // TODO (nice to have) check the status of the SSI and the key (see if it's a valid key)
-  }
-  PRISMDriver.runProgram(initProgram) // run the init program when the class is created
 
   // implement methods here (or use stub for now)
   def getFamily: String = "PRISM"
@@ -39,25 +84,14 @@ case class PRISMDriver(
   def getVersion: String = "1.0"
   def getSupportedVersions: Array[String] = Array("1.0")
 
-  private val genericVDRDriver: GenericVDRDriver =
-    GenericVDRDriver(
-      bfConfig,
-      wallet,
-      workdir = workdir,
-      didPrism,
-      keyName,
-      vdrKey,
-      maybeMsgCIP20 = Some(getIdentifier)
-    )
-
   override def create(
       data: Array[Byte],
       options: java.util.Map[String, ?]
   ): interfaces.Driver.OperationResult = {
     PRISMDriver.runProgram(
       for {
-        ret <- genericVDRDriver.createBytesEntry(data)
-        (refVDR, txHash) = ret
+        ret <- vdrService.createBytes(didPrism, vdrKey, data)
+        (refVDR, signedPrismEvent, txHash) = ret
         out = Driver.OperationResult(
           refVDR.hex,
           Driver.OperationState.SUCCESS,
@@ -87,8 +121,8 @@ case class PRISMDriver(
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
           for {
-            ret <- genericVDRDriver.updateBytesEntry(eventRef, data)
-            (updateEventHash, txHash) = ret
+            ret <- vdrService.updateBytes(eventRef, vdrKey, data)
+            (updateEventHash, signedPrismEvent, txHash) = ret
             out = Driver.OperationResult(
               updateEventHash.hex,
               Driver.OperationState.SUCCESS,
@@ -117,8 +151,8 @@ case class PRISMDriver(
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
           for {
-            ret <- genericVDRDriver.deactivateEntry(eventRef)
-            (updateEventHash, txHash) = ret
+            ret <- vdrService.deactivate(eventRef, vdrKey)
+            (updateEventHash, signedPrismEvent, txHash) = ret
             out = Driver.OperationResult(
               updateEventHash.hex,
               Driver.OperationState.SUCCESS,
@@ -144,7 +178,7 @@ case class PRISMDriver(
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
           for {
-            vdr <- genericVDRDriver.fetchEntry(eventRef)
+            vdr <- vdrService.fetch(eventRef)
           } yield vdr.data match {
             case VDR.DataEmpty()              => Array.empty()
             case VDR.DataDeactivated(data)    => Array.empty()
@@ -175,9 +209,7 @@ case class PRISMDriver(
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         PRISMDriver.runProgram(
-          for {
-            vdr <- genericVDRDriver.fetchEntry(eventRef)
-          } yield vdr.data match {
+          for { vdr <- vdrService.fetch(eventRef) } yield vdr.data match {
             case VDR.DataEmpty() =>
               Proof("PrismBlock", Array.empty(), Array.empty()) // TODO proof
             case VDR.DataDeactivated(data) =>
