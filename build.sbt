@@ -38,7 +38,8 @@ inThisBuild(
 
 /** Versions */
 lazy val V = new {
-  val scalaDID = "0.1.0-M28"
+  val scalaDID = "0.1.0-M29"
+
   val identusVDR = "0.2.1"
 
   val munit = "1.2.1"
@@ -123,4 +124,17 @@ lazy val root = project
       D.munit.value,
       D.munitZio.value
     )
+  )
+
+lazy val demo = project
+  .in(file("demo"))
+  .dependsOn(root)
+  .settings(
+    name := "prism-vdr-demo",
+    description := "PRISM VDR Driver Demo Examples",
+    libraryDependencies ++= Seq(
+      D.scalaDIDPrism.value,
+      D.zio.value
+    ),
+    publish / skip := true
   )
