@@ -28,9 +28,6 @@ PRISM_LABEL          | `21325`           | Cardano metadata label used by this p
 CRYPTOGRAPHIC_CURVE	 | `secp256k1`       | Cryptographic curve used with a key.
 SIGNATURE_ALGORITHM	 | SHA256 with ECDSA | Asymmetric public key signature algorithm.
 HASH_ALGORITHM       | SHA-256           | Algorithm for generating hashes.
-SECP256K1_CURVE_NAME | `secp256k1`       | String identifier for the SECP256K1 elliptic curve
-ED25519_CURVE_NAME	 | `Ed25519`         | String identifier for the ED25519 elliptic curve
-X25519_CURVE_NAME	   | `X25519`          | String identifier for the Curve25519 elliptic curve
 
 Notes: 
 - `PRISM_LABEL` is used by:
@@ -109,7 +106,7 @@ stateDiagram-v2
 - The identifier of the `SSI` MUST be the hash of the `E-1` event (using `HASH_ALGORITHM`) serves as the unique SSI reference.
 - The `E-2` and `E-6` events MUST be signed by a `MASTER_KEY` listed in the `SSI` at that point in time.
 - The `E-2-1` and `E-6-1` events MUST point to the `previous_event_hash`. The reference (hash) of the most recent event that was used to create or update the SSI.
-- The `MASTER_KEY` MUST use the curve `SECP256K1_CURVE_NAME`.
+- The `MASTER_KEY` MUST use the curve `CRYPTOGRAPHIC_CURVE`.
 -  Note:
    The `did:prism` also has a long form, in which the source of truth might not be on the blockchain.
    <br> The long form identifier is related to a canonical form identifier.
@@ -146,6 +143,10 @@ Event Name               | Protobuf | Description
 Create Storage entry     | `E-7`    | Create a new storage entry. Where the identifier is the `HASH_ALGORITHM` of the protobuf.
 Update Storage entry     | `E-8`    | Builds a chain on a storage entry to update the state of that entry.
 Deactivate Storage entry | `E-9`    | Deactivate the storage entry. This is an end stat and can no longer be activated.
+Clone (git branch)       | ?????    | (Same data, different reference) - Like the and create event. But point to another Storage entry, forking the data at the current state. 
+FORCE                    | ?????    | (Same reference, different data) - Like the an update event. But forces the data state in a previously state. Maybe even allowance for cleaning up and starting fresh; changing the type of the encoded data; Fork another storage entry
+Mark immutable           | ?????    | (Same reference, same data, but static) - Like deactivate and considered valid event after the DID (onwer) is deactivated. (this is dangerous IMO same was as deactivate storage entries and DID is dangerous)
+git cherry-pick          | ?????    |cherry-pick Update entry another another place? (maybe overkill IMO)
 
 Note:
 The amount of information stored in a Storage Entry should be relatively small.
@@ -187,6 +188,13 @@ stateDiagram-v2
 The not no Unknown State only exists on the PRISM Indexer implementation. (See the section #Indexer)
 <br> It covers the future extension of this protocol and represents either an Active or Deactivated state.
 
+#### Steps to resolving Storage entry
+
+There are decreased wipes from the identifier until we get the actual data.
+1. **Index** all PRISM events into groups of events related to identifies.
+2. **Validate** the older sequence of events (from the previous step) to get a chain events for each identify.
+3. **Resolve** the data encoded in the chain of events from the previous step.
+
 #### Validation rules
 For the Storage Events (`E-7`, `E-8`, `E-9`) to be considered valid, they must meet the following criteria:
 - The event must have a valid signature.
@@ -196,7 +204,7 @@ For the Storage Events (`E-7`, `E-8`, `E-9`) to be considered valid, they must m
   - If `E-7-1` is present, the event must be signed by the owner's key, using:
     - the state of the `SSI` the moment before the event. (all and only the events before the one that is being validated)
     - the `SIGNATURE_ALGORITHM`
-    - the curve `SECP256K1_CURVE_NAME`
+    - the curve `CRYPTOGRAPHIC_CURVE`
     - the purpose `#KeyUsage-8` (VDR_KEY)
   - In `E-8`, `E-9` fields `2`(`E-8-2`) and `3`(`E-9-2`) must be present and point to the reference of the latest valid event for that identitier.
   - Field `E-7-3...49` is reserved for future extension of this protocol.
@@ -226,6 +234,9 @@ However, the existence of the Storage entry must still be recognized, verified, 
 
 Users of the indexer SHOULD always have the opportunity to retrieve all associated raw events. So they can locally verify and resolve the content.  
 
+
+#### Storage Entry - data encode
+
 The encode method of the Storage Entry may be defined by the create event/operation, depending on the protobuf field used:
  The data, the following types of information/data may be stored:
 
@@ -234,12 +245,13 @@ Type of Data                    | Protobufs           | Represents
  **bytes**                      | `E-7-100`,`E-8-100` | A raw array of bytes.
 **CID (content identifier)**    | `E-7-101`,`E-8-101` | A reference to an IPFS document.
 
-
-##### Storage Entry - bytes (`E-7-100` & `E-8-100`)
+##### Storage Entry - bytes (`E-7-100` & `E-8-100` & `E-8-102`)
 
 This data type is designed to represent an array of bytes.
 The field `E-7-100` is the initial array of bytes (protobuf type `bytes`) that the content of this entry will have.
 The field `E-8-100` is an array of bytes (protobuf type `bytes`) and will replace the previous content of the state with the new.
+
+(Advance byte array???) The field `E-8-102` is the encoded results of a diff function of bytes.
 
 ##### Storage Entry - IPFS CID (`E-7-101` & `E-8-101`)
 
@@ -257,6 +269,20 @@ Therefore, it is recommended that when retrieving the data and verify that this 
 Since **IPFS** relies on nodes voluntarily storing data, there is no guarantee that data will be stored permanently.
 For some use cases, the actors may consider pinning the data themselves to guarantee data persistence.
 
+#### Storage Entry - Advance byte array (`E-7-???` & `E-8-???`)
+
+??? Like bytes (`E-7-100` & `E-8-100`) but allows for more complex operations modifications on the array for append and prepend, replace or substitute (by insert in any place).
+In other words, we need a diff function for bytes and an encoding for that diff.
+
+#### Storage Entry - Revocation status (`E-7-???` & `E-8-???`)
+
+???
+
+#### Storage Entry - custom 
+
+The custom encoding can use any number between `1000` and `2147483647` (`2^31 - 1`) excluding `19000–19999` which are reserved for the protobuf implementation.
+Users are recommended to do PR in the table ???? reserving fields for their use cases. (this works on first come first use bias)
+
 
 ## Indexer
 
@@ -268,7 +294,7 @@ Design goals:
   <br>This is because the Ouroboros protocol used in Cardano and its eventual consensus property.
   - Ideally, we recommend that the indexer be able to backtrack all steps and unapply them.
   - Can also run with a delay `k` (`Settlement time`).
-    - At the time of of writing `k=2160` (36 minutes).
+    - At the time of writing `k=2160` (36 minutes).
     - In practice, the network is considered very stable:
       - 15–30 blocks (~15–30 seconds) for light confirmation.
       - ~150–300 blocks (~2.5–5 minutes) for strong practical finality.
@@ -280,16 +306,46 @@ Design goals:
   <br>The Indexer is described for the general use case.
 
 
+## Considerations
+
+- **Public** -
+  Everything in the blockchain is public.
+  Although the content of the data can be encrypted or deferred to another place (e.g. IPFS)
+
+- **Permanent** -
+  All the information is considered permanent after the `Settlement time`.
+  At the time of writing `k=2160` (36 minutes).
+  But after submitting a transaction there is no operation to cancel.
+
+- **Size constraint** -
+  In Cardano, transactions was a max size.
+  So everything related to the transaction itself and the metadata in the PRISM Block containing the events MUST fit within the max size.
+  At the time of writing the max transaction size is `16,384 bytes`.
+
+- **Cryptographic & quantum-resistant** -
+  `CRYPTOGRAPHIC_CURVE` is the key type used for MASTER_KEY and VDR_KEY, which is not considered quantum-resistant.
+  However, the [`did:prism` DID method](https://github.com/input-output-hk/prism-did-method-spec/blob/main/w3c-spec/PRISM-method.md) like this protocol. It has the `ProtoProtocolVersionUpdate` event type that allows marking breaking changes in the specification by an official source.
+  This makes it possible to swap in post-quantum signature schemes in the future once standards mature.
+
+- **Notion of date-time** -
+  All events are associated to a Cardano transaction.
+  Those transaction can be associated with real date-time or a small period of time.
+  So this notion of real time can be used to prove that some information was available before some a date-time.
+
 ## Document History
 
 0. Initial draft.
-1. Restructuring the document, Fix typos and incorporate recommendations from reviews.
+1. Restructuring the document; Fix typos; Incorporate recommendations from reviews.
+2. Add sections considerations, custom encoding section; Add authors ???; Fix typos.
+10. ??? `VERSION 1.0`- Mark document as stabled.
 
 ## Authors and Contributors
 
 - **Fabio Pinheiro** <br>
   [Email: fabio.pinheiro@iohk.io](mailto:fabio.pinheiro@iohk.io) <br>
   [Github: FabioPinheiro](https://github.com/FabioPinheiro)
+
+- ???
 
 ---
 
