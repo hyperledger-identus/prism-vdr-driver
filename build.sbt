@@ -38,7 +38,7 @@ inThisBuild(
 
 /** Versions */
 lazy val V = new {
-  val scalaDID = "0.1.0-M30"
+  val scalaDID = "0.1.0-M31"
 
   val identusVDR = "0.2.1"
 
