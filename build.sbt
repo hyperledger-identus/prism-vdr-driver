@@ -56,6 +56,8 @@ lazy val V = new {
   val zioTest = "2.1.5"
   val zioTestSbt = "2.1.5"
   val zioTestMagnolia = "2.1.5"
+
+  val reactivemongo = "1.1.0-RC17"
 }
 
 /** Dependencies */
@@ -64,6 +66,8 @@ lazy val D = new {
   val scalaDIDPrism = Def.setting("app.fmgp" %% "did-method-prism" % V.scalaDID)
   val identusVDR =
     Def.setting("org.hyperledger.identus" % "vdr" % V.identusVDR)
+
+  val reactivemongo = Def.setting("org.reactivemongo" %% "reactivemongo" % V.reactivemongo)
 
   val zio = Def.setting("dev.zio" %% "zio" % V.zio)
   val zioJson = Def.setting("dev.zio" %% "zio-json" % V.zioJson)
@@ -121,6 +125,7 @@ lazy val root = project
       // D.scalaDID.value,
       D.scalaDIDPrism.value,
       D.identusVDR.value,
+      D.reactivemongo.value,
       D.munit.value,
       D.munitZio.value
     )

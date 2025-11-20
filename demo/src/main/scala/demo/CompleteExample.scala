@@ -6,6 +6,7 @@ import fmgp.util.bytes2Hex
 import interfaces.Driver
 
 import hyperledger.identus.vdr.prism.PRISMDriver
+import fmgp.did.method.prism.PrismState
 
 /** This example demonstrates the complete lifecycle of data on the blockchain: Create → Read → Update → Verify → Delete
   */
@@ -21,18 +22,25 @@ object CompleteExample {
     println("\n" + "━" * 70)
     println("STEP 1: Setup")
     println("━" * 70)
-    val driver = DemoConfig.createDriver()
+    val driver = DemoConfig.createDriverMongoDB()
     println(s"✓ Driver Version: ${driver.getVersion}")
     println(s"✓ Driver Family: ${driver.getFamily}")
     println(s"✓ Driver ID: ${driver.getIdentifier}")
 
     // 1. Create the DID
     val txHash = PRISMDriver.runProgram(
-      DemoConfig.programCreateDID.orDie.provide(ZLayer.succeed(driver.vdrService))
+      DemoConfig
+        .programCreateDID(
+          DemoConfig.blockfrostConfig,
+          DemoConfig.walletConfig
+        )
     )
-    println(s"✓ Create DID txHash: ${txHash.hex}") //0e458f7a091f1cfed05ede0a29c11ef17305162ea1782d7cb165e0380a72ee0c
-    https://github.com/FabioPinheiro/prism-vdr/commit/7689f0d098183720d8ede331dbbd5bad47e82206
-    driver.vdrService.getSSI(didPrism)
+    println(s"✓ Create DID txHash: ${txHash.hex}") // 0e458f7a091f1cfed05ede0a29c11ef17305162ea1782d7cb165e0380a72ee0c
+    // https://github.com/FabioPinheiro/prism-vdr/commit/7689f0d098183720d8ede331dbbd5bad47e82206
+    DemoConfig.runWithPrismState(for {
+      prismState <- ZIO.service[PrismState]
+      _ = prismState.getSSI(DemoConfig.didPrism)
+    } yield ())
 
     // ### WAIT for be written in blockchain ###
 
@@ -49,7 +57,8 @@ object CompleteExample {
     println(s"Identifier: $id") // 79cd64ec382266690825f9955b9a3d22d1564c276f054a8da86b2ea68e334fb7
     println(s"State: ${createResult.getState}")
 
-    val vdrEntryId = "79cd64ec382266690825f9955b9a3d22d1564c276f054a8da86b2ea68e334fb7"
+    assert(vdrEntryId == "79cd64ec382266690825f9955b9a3d22d1564c276f054a8da86b2ea68e334fb7")
+    // val vdrEntryId = "79cd64ec382266690825f9955b9a3d22d1564c276f054a8da86b2ea68e334fb7"
 
     // ### WAIT for be written in blockchain ###
 
@@ -145,9 +154,9 @@ object CompleteExample {
     println("━" * 70)
     val status = driver.storeResultState(vdrEntryId)
     status match {
-      case Driver.OperationState.SUCCESS =>  println("✅ Operation succeeded")
-      case Driver.OperationState.RUNNING =>  println("⏳ Operation in progress")
-      case Driver.OperationState.ERROR   =>  println("❌ Operation failed")
+      case Driver.OperationState.SUCCESS => println("✅ Operation succeeded")
+      case Driver.OperationState.RUNNING => println("⏳ Operation in progress")
+      case Driver.OperationState.ERROR   => println("❌ Operation failed")
     }
 
     // Summary

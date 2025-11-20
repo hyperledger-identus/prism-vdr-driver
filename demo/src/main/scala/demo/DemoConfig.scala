@@ -60,14 +60,19 @@ object DemoConfig {
     */
   val didPrism: DIDPrism = DIDPrism("51d47b13393a7cc5c1afc47099dcbecccf0c8a70828c072ac82f55225b42d4f4")
 
-  def programCreateDID = {
+  def programCreateDID(
+      bfConfig: BlockfrostConfig,
+      wallet: CardanoWalletConfig,
+  ) = {
     val pkMaster = walletConfig.secp256k1PrivateKey(0, 0)
     val pk1VDR = walletConfig.secp256k1PrivateKey(0, 1)
     val (tmpDIDPrism, signedPrismEvent) = DIDExtra.createDID(Seq(("master1", pkMaster)), Seq(("vdr1", pk1VDR)))
     assert(tmpDIDPrism.string == didPrism.string)
     for {
-      vdrService <- ZIO.service[VDRService]
-      txHash <- vdrService.submit(signedPrismEvent)
+      txHash <- PrismChainServiceImpl(bfConfig, wallet).commitAndPush(
+        Seq(signedPrismEvent),
+        Some("DID from PrismVdrDemo")
+      )
       _ <- ZIO.log(s"DID '${tmpDIDPrism.string}' created in txHash '${txHash.hex}'")
     } yield (txHash)
   }
@@ -82,19 +87,33 @@ object DemoConfig {
   /** Key name of the VDR key type */
   // val keyName: String = "vdr1"
 
+  def runWithPrismState[E, A](program: ZIO[PrismState, E, A]) = {
+    import fmgp.did.method.prism.mongo.AsyncDriverResource
+    val mongoDBConnection: String = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
+    val layer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeLayer(mongoDBConnection)
+    PRISMDriver.runProgram(program.provideLayer(layer))
+  }
+
   /** Create a configured PRISM Driver instance
     *
     * @return
-    *   A configured PRISMDriver ready to use
+    *   A configured PRISMDriverInMemory ready to use
     */
-  def createDriver(): PRISMDriver =
-    PRISMDriver(
+  def createDriverInMemory(): PRISMDriverInMemory =
+    PRISMDriverInMemory(
       bfConfig = blockfrostConfig,
       wallet = walletConfig,
       didPrism = didPrism,
       vdrKey = vdrKey,
-      // keyName = keyName,
       workdir = workdir
+    )
+
+  def createDriverMongoDB(): PRISMDriverMongoDB =
+    PRISMDriverMongoDB(
+      bfConfig = blockfrostConfig,
+      wallet = walletConfig,
+      didPrism = didPrism,
+      vdrKey = vdrKey,
     )
 
   /** Print configuration information (without sensitive data) */
