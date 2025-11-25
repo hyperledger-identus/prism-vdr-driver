@@ -21,13 +21,13 @@ case class PRISMDriverMongoDB(
     didPrism: DIDPrism,
     vdrKey: Secp256k1PrivateKey,
     mongoDBConnection: String = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
-) extends PRISMDriver {
-  val prismStateZLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeLayer(mongoDBConnection)
+) extends PRISMReadOnlyDriver {
+  val prismStateZLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeReadOnlyLayer(mongoDBConnection)
   val chain = PrismChainServiceImpl(blockfrostConfig, wallet)
   def vdrServiceLayer = // TODO make layer in method in dependency
-    ZLayer.fromZIO { ZIO.service[PrismState].map(prismState => VDRServiceImpl(chain, prismState)) }
+    ZLayer.fromZIO { ZIO.service[PrismStateRead].map(prismState => VDRPassiveServiceImp(prismState)) }
 
-  def run[E, A](program: ZIO[VDRService, E, A]): A = {
+  def run[E, A](program: ZIO[VDRPassiveService, E, A]): A = {
     PRISMDriver.runProgram[E, A](program.provideLayer(prismStateZLayer.orDie >>> vdrServiceLayer))
   }
 

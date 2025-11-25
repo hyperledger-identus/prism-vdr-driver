@@ -32,17 +32,9 @@ object PRISMDriver {
 
 }
 
-trait PRISMDriver extends Driver {
+trait PRISMDriver extends PRISMReadOnlyDriver {
 
-  def run[E, A](program: ZIO[VDRService, E, A]): A
-  override def getIdentifier: String // = "PRISMDriver"
-  def didPrism: DIDPrism
-  def vdrKey: Secp256k1PrivateKey
-
-  override def getFamily: String = "PRISM"
-  override def getVersion: String = "1.0"
-  override def getSupportedVersions: Array[String] = Array("1.0")
-
+  override def run[E, A](program: ZIO[VDRService, E, A]): A
   override def create(
       data: Array[Byte],
       options: java.util.Map[String, ?]
@@ -127,6 +119,38 @@ trait PRISMDriver extends Driver {
           } yield out
         )
   }
+}
+
+trait PRISMReadOnlyDriver extends Driver {
+
+  def run[E, A](program: ZIO[VDRPassiveService, E, A]): A
+  override def getIdentifier: String // = "PRISMDriver"
+  def didPrism: DIDPrism
+  def vdrKey: Secp256k1PrivateKey
+
+  override def getFamily: String = "PRISM"
+  override def getVersion: String = "1.0"
+  override def getSupportedVersions: Array[String] = Array("1.0")
+
+  override def create(
+      data: Array[Byte],
+      options: java.util.Map[String, ?]
+  ): interfaces.Driver.OperationResult = ???
+
+  override def update(
+      data: Array[Byte],
+      paths: Array[String],
+      queries: java.util.Map[String, String],
+      fragment: String,
+      options: java.util.Map[String, ?]
+  ): interfaces.Driver.OperationResult = ???
+
+  override def delete(
+      paths: Array[String],
+      queries: java.util.Map[String, String],
+      fragment: String,
+      options: java.util.Map[String, ?]
+  ): Unit = ???
 
   override def read(
       paths: Array[String],
@@ -140,14 +164,14 @@ trait PRISMDriver extends Driver {
         val eventRef: RefVDR = RefVDR(hash)
         run(
           for {
-            vdrService <- ZIO.service[VDRService]
+            vdrService <- ZIO.service[VDRPassiveService]
             vdr <- vdrService.fetch(eventRef)
           } yield vdr.data match {
-            case VDR.DataEmpty()              => Array.empty()
-            case VDR.DataDeactivated(data)    => Array.empty()
+            case VDR.DataEmpty()              => Array.empty[Byte]()
+            case VDR.DataDeactivated(data)    => Array.empty[Byte]()
             case VDR.DataByteArray(byteArray) => byteArray
-            case VDR.DataIPFS(cid)            => Array.empty()
-            case VDR.DataStatusList(status)   => Array.empty()
+            case VDR.DataIPFS(cid)            => Array.empty[Byte]()
+            case VDR.DataStatusList(status)   => Array.empty[Byte]()
           }
         )
   }
@@ -173,7 +197,7 @@ trait PRISMDriver extends Driver {
         val eventRef: RefVDR = RefVDR(hash)
         run(
           for {
-            vdrService <- ZIO.service[VDRService]
+            vdrService <- ZIO.service[VDRPassiveService]
             vdr <- vdrService.fetch(eventRef)
           } yield vdr.data match {
             case VDR.DataEmpty() =>
