@@ -22,25 +22,25 @@ object CompleteExample {
     println("\n" + "━" * 70)
     println("STEP 1: Setup")
     println("━" * 70)
-    val driver = DemoConfig.createDriverMongoDB()
+    val driver = DemoConfig.createDriverMongoDBWithIndexer()
     println(s"✓ Driver Version: ${driver.getVersion}")
     println(s"✓ Driver Family: ${driver.getFamily}")
     println(s"✓ Driver ID: ${driver.getIdentifier}")
 
-    // 1. Create the DID
-    val txHash = PRISMDriver.runProgram(
-      DemoConfig
-        .programCreateDID(
-          DemoConfig.blockfrostConfig,
-          DemoConfig.walletConfig
-        )
-    )
-    println(s"✓ Create DID txHash: ${txHash.hex}") // 0e458f7a091f1cfed05ede0a29c11ef17305162ea1782d7cb165e0380a72ee0c
-    // https://github.com/FabioPinheiro/prism-vdr/commit/7689f0d098183720d8ede331dbbd5bad47e82206
-    DemoConfig.runWithPrismState(for {
-      prismState <- ZIO.service[PrismState]
-      _ = prismState.getSSI(DemoConfig.didPrism)
-    } yield ())
+    // // 1. Create the DID
+    // val txHash = PRISMDriver.runProgram(
+    //   DemoConfig
+    //     .programCreateDID(
+    //       DemoConfig.blockfrostConfig,
+    //       DemoConfig.walletConfig
+    //     )
+    // )
+    // println(s"✓ Create DID txHash: ${txHash.hex}") // 0e458f7a091f1cfed05ede0a29c11ef17305162ea1782d7cb165e0380a72ee0c
+    // // https://github.com/FabioPinheiro/prism-vdr/commit/7689f0d098183720d8ede331dbbd5bad47e82206
+    // DemoConfig.runWithPrismState(for {
+    //   prismState <- ZIO.service[PrismState]
+    //   _ = prismState.getSSI(DemoConfig.didPrism)
+    // } yield ())
 
     // ### WAIT for be written in blockchain ###
 

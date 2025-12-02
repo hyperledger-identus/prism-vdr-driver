@@ -35,3 +35,5 @@ vite/dev-dist/
 #lixo
 lixo
 src/main/scala/hyperledger/identus/vdr/prism/DemoPRISMDriver.scala
+
+.secret

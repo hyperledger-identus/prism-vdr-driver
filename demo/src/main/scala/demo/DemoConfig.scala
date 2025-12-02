@@ -15,7 +15,8 @@ import hyperledger.identus.vdr.prism.*
 object DemoConfig {
 
   /** Blockfrost API configuration for preprod (testnet) */
-  val blockfrostConfig: BlockfrostConfig = BlockfrostConfig(token = "preprod9EGSSMf6oWb81qoi8eW65iWaQuHJ1HwB")
+  val blockfrostConfig: BlockfrostConfig = BlockfrostConfig(token = Secrets.blockfrostToken)
+  // FIXME rotate key
 
   /** Working directory for driver state management */
   val workdir: String = "../prism-vdr-preprod"
@@ -89,8 +90,8 @@ object DemoConfig {
 
   def runWithPrismState[E, A](program: ZIO[PrismState, E, A]) = {
     import fmgp.did.method.prism.mongo.AsyncDriverResource
-    val mongoDBConnection: String = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
-    val layer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeLayer(mongoDBConnection)
+    val layer =
+      AsyncDriverResource.layer >>> PrismStateMongoDB.makeLayer(Secrets.mongoDBConnection)
     PRISMDriver.runProgram(program.provideLayer(layer))
   }
 
@@ -101,19 +102,20 @@ object DemoConfig {
     */
   def createDriverInMemory(): PRISMDriverInMemory =
     PRISMDriverInMemory(
-      bfConfig = blockfrostConfig,
+      blockfrostConfig = blockfrostConfig,
       wallet = walletConfig,
       didPrism = didPrism,
       vdrKey = vdrKey,
       workdir = workdir
     )
 
-  def createDriverMongoDB(): PRISMDriverMongoDB =
-    PRISMDriverMongoDB(
-      bfConfig = blockfrostConfig,
+  def createDriverMongoDBWithIndexer(): PRISMDriverMongoDBWithIndexer =
+    PRISMDriverMongoDBWithIndexer(
+      blockfrostConfig = blockfrostConfig,
       wallet = walletConfig,
       didPrism = didPrism,
       vdrKey = vdrKey,
+      mongoDBConnection = Secrets.mongoDBConnection
     )
 
   /** Print configuration information (without sensitive data) */
