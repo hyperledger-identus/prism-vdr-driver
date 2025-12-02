@@ -20,7 +20,7 @@ case class PRISMReadOnlyDriverMongoDB(
     wallet: CardanoWalletConfig,
     didPrism: DIDPrism,
     vdrKey: Secp256k1PrivateKey,
-    mongoDBConnection: String = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
+    mongoDBConnection: String // = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
 ) extends PRISMReadOnlyDriver {
   val prismStateZLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeReadOnlyLayer(mongoDBConnection)
   val chain = PrismChainServiceImpl(blockfrostConfig, wallet)
