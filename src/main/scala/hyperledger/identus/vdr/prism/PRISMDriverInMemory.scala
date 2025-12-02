@@ -44,18 +44,18 @@ object PRISMDriverInMemory {
   } yield state
 
   def apply(
-      bfConfig: BlockfrostConfig,
+      blockfrostConfig: BlockfrostConfig,
       wallet: CardanoWalletConfig,
       didPrism: DIDPrism,
       vdrKey: Secp256k1PrivateKey,
       // keyName: String = "vdr1",
       workdir: String = "../../prism-vdr/mainnet"
   ): PRISMDriverInMemory = {
-    val chain: PrismChainService = PrismChainServiceImpl(bfConfig, wallet)
+    val chain: PrismChainService = PrismChainServiceImpl(blockfrostConfig, wallet)
     val prismState = PRISMDriver.runProgram(
       for {
         prismState <- PrismStateInMemory.empty
-        indexerConfig: IndexerConfig = IndexerConfig(mBlockfrostConfig = Some(bfConfig), workdir = workdir)
+        indexerConfig: IndexerConfig = IndexerConfig(mBlockfrostConfig = Some(blockfrostConfig), workdir = workdir)
         prismStateLayer = ZLayer.succeed(prismState)
         indexerConfigLayer = ZLayer.succeed(indexerConfig)
         _ <- /*IndexerUtils.*/ loadPrismStateFromChunkFiles.provide(prismStateLayer ++ indexerConfigLayer)
@@ -73,9 +73,9 @@ case class PRISMDriverInMemory(
     vdrKey: Secp256k1PrivateKey,
 ) extends PRISMDriver {
 
-  def run[E, A](program: ZIO[VDRService, E, A]): A = {
+  override def run[E, A](program: ZIO[VDRService, E, A]): A =
     PRISMDriver.runProgram[E, A](program.provideEnvironment(ZEnvironment(vdrService)))
-  }
+
   def getIdentifier: String = "PRISMDriverInMemory"
 
 }
