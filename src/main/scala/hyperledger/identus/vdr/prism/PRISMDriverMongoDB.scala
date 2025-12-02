@@ -21,51 +21,16 @@ case class PRISMDriverMongoDB(
     didPrism: DIDPrism,
     vdrKey: Secp256k1PrivateKey,
     mongoDBConnection: String = "mongodb+srv://readonly:readonly@cluster0.bgnyyy1.mongodb.net/indexer"
-) extends PRISMReadOnlyDriver {
-  val prismStateZLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeReadOnlyLayer(mongoDBConnection)
-  val chain = PrismChainServiceImpl(blockfrostConfig, wallet)
-  def vdrServiceLayer = // TODO make layer in method in dependency
-    ZLayer.fromZIO { ZIO.service[PrismStateRead].map(prismState => VDRPassiveServiceImp(prismState)) }
-
-  def run[E, A](program: ZIO[VDRPassiveService, E, A]): A = {
-    PRISMDriver.runProgram[E, A](program.provideLayer(prismStateZLayer.orDie >>> vdrServiceLayer))
-  }
-
-  def getIdentifier: String = "PRISMDriverMongoDB"
-
-}
-
-case class PRISMDriverMongoDBWithIndexer(
-    blockfrostConfig: BlockfrostConfig,
-    wallet: CardanoWalletConfig,
-    didPrism: DIDPrism,
-    vdrKey: Secp256k1PrivateKey,
-    mongoDBConnection: String
 ) extends PRISMDriver {
-  val prismStateLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeLayer(mongoDBConnection)
-  val blockfrostConfigLayer = ZLayer.succeed(blockfrostConfig)
+  val prismStateLayer = AsyncDriverResource.layer >>> PrismStateMongoDB.makeReadOnlyLayer(mongoDBConnection)
   val chain = PrismChainServiceImpl(blockfrostConfig, wallet)
   def vdrServiceLayer = // TODO make layer in method in dependency
-    ZLayer.fromZIO { ZIO.service[PrismState].map(prismState => VDRServiceImpl(chain, prismState)) }
+    ZLayer.fromZIO { ZIO.service[PrismStateRead].map(prismState => VDRServiceImpl(chain, prismState)) }
 
-  def run[E, A](program: ZIO[VDRService, E, A]): A = {
-    PRISMDriver.runProgram[E, A](
-      for {
-        _ <- ZIO.log(s"Indexer start: $mongoDBConnection")
-        eventCounter <- vdr.Indexer.indexerJobDB.provideLayer(prismStateLayer ++ blockfrostConfigLayer).orDie
-        _ <- ZIO.log(s"Inddexed with $eventCounter Events")
-        ret <- program.provideLayer(prismStateLayer.orDie >>> vdrServiceLayer)
-      } yield ret
-    )
+  override def run[E, A](program: ZIO[VDRService, E, A]): A = {
+    PRISMDriver.runProgram[E, A](program.provideLayer(prismStateLayer.orDie >>> vdrServiceLayer))
   }
 
-  def getIdentifier: String = "PRISMDriverMongoDBWithIndexer"
-
-  def index(blockfrostConfig: BlockfrostConfig): ZIO[Any, Unit, Unit] =
-    for {
-      _ <- ZIO.log(s"Index latest data")
-      eventCounter <- vdr.Indexer.indexerJobDB.provideLayer(prismStateLayer ++ blockfrostConfigLayer).orDie
-      _ <- ZIO.log(s"Inddexed with $eventCounter Events")
-    } yield ()
+  override def getIdentifier: String = "PRISMDriverMongoDB"
 
 }
