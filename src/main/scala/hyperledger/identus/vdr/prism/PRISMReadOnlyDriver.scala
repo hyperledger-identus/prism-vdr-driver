@@ -29,7 +29,7 @@ trait PRISMReadOnlyDriver extends Driver {
       publicKeys: Array[java.security.PublicKey]
   ): Array[Byte] = {
     paths.headOption match
-      case None       => Array.empty()
+      case None       => throw DataCouldNotBeFoundException(Some("the identifier is missing from the path"))
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         runWithVDRPassiveService(
@@ -37,11 +37,11 @@ trait PRISMReadOnlyDriver extends Driver {
             vdrService <- ZIO.service[VDRPassiveService]
             vdr <- vdrService.fetch(eventRef)
           } yield vdr.data match {
-            case VDR.DataEmpty()              => Array.empty[Byte]()
-            case VDR.DataDeactivated(data)    => Array.empty[Byte]()
+            case VDR.DataEmpty()              => throw DataNotInitializedException(eventRef)
+            case VDR.DataDeactivated(data)    => throw DataAlreadyDeactivatedException(eventRef)
             case VDR.DataByteArray(byteArray) => byteArray
-            case VDR.DataIPFS(cid)            => Array.empty[Byte]()
-            case VDR.DataStatusList(status)   => Array.empty[Byte]()
+            case VDR.DataIPFS(cid)            => cid.getBytes
+            case VDR.DataStatusList(status)   => throw DataOfUnexpectedTypeException(eventRef)
           }
         )
   }
@@ -62,7 +62,7 @@ trait PRISMReadOnlyDriver extends Driver {
       returnData: Boolean
   ): interfaces.Proof = {
     paths.headOption match
-      case None       => ???
+      case None       => throw DataCouldNotBeFoundException(Some("the identifier is missing from the path"))
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         runWithVDRPassiveService(
@@ -74,19 +74,22 @@ trait PRISMReadOnlyDriver extends Driver {
               Proof("PrismBlock", Array.empty(), Array.empty()) // TODO proof
             case VDR.DataDeactivated(data) =>
               data match {
-                case VDR.DataEmpty()           => throw DataNotInitializedException()
-                case VDR.DataDeactivated(data) =>
-                  throw DataAlreadyDeactivatedException()
+                case VDR.DataEmpty()              => throw DataNotInitializedException(eventRef)
+                case VDR.DataDeactivated(data)    => throw DataAlreadyDeactivatedException(eventRef)
                 case VDR.DataByteArray(byteArray) =>
                   Proof(
                     "PrismBlock",
-                    byteArray, // Data
+                    Array.empty(), // Data emply because its deactivated
                     Array.empty() // TODO proof will is a protobuf Array of PRISM events. Reuse the PrismBlock?
                   )
                 case VDR.DataIPFS(cid) =>
-                  ??? // not part of the generic VDR specification
+                  Proof(
+                    "PrismBlock",
+                    Array.empty(), // Data emply because its deactivated
+                    Array.empty() // TODO proof will is a protobuf Array of PRISM events. Reuse the PrismBlock?
+                  )
                 case VDR.DataStatusList(status) =>
-                  ??? // not part of the generic VDR specification
+                  throw DataOfUnexpectedTypeException(eventRef) // not part of the generic VDR specification
               }
             case VDR.DataByteArray(byteArray) =>
               Proof(
@@ -95,9 +98,17 @@ trait PRISMReadOnlyDriver extends Driver {
                 Array.empty() // TODO proof will is a protobuf Array of PRISM events like a PrismBlock?
               )
             case VDR.DataIPFS(cid) =>
-              ??? // not part of the generic VDR specification
+              Proof(
+                "PrismBlock",
+                cid.getBytes, // Data
+                Array.empty() // TODO proof will is a protobuf Array of PRISM events. Reuse the PrismBlock?
+              )
             case VDR.DataStatusList(status) =>
-              ??? // not part of the generic VDR specification
+              Proof(
+                "PrismBlock",
+                Array.empty(), // Data
+                Array.empty() // TODO proof will is a protobuf Array of PRISM events. Reuse the PrismBlock?
+              )
           }
         )
   }
@@ -105,7 +116,7 @@ trait PRISMReadOnlyDriver extends Driver {
   override def create(
       data: Array[Byte],
       options: java.util.Map[String, ?]
-  ): interfaces.Driver.OperationResult = ??? // intentional it should return an error
+  ): interfaces.Driver.OperationResult = throw UnsupportedNotPassiveMethodException
 
   override def update(
       data: Array[Byte],
@@ -113,12 +124,12 @@ trait PRISMReadOnlyDriver extends Driver {
       queries: java.util.Map[String, String],
       fragment: String,
       options: java.util.Map[String, ?]
-  ): interfaces.Driver.OperationResult = ??? // intentional it should return an error
+  ): interfaces.Driver.OperationResult = throw UnsupportedNotPassiveMethodException
 
   override def delete(
       paths: Array[String],
       queries: java.util.Map[String, String],
       fragment: String,
       options: java.util.Map[String, ?]
-  ): Unit = ??? // intentional it should return an error
+  ): Unit = throw UnsupportedNotPassiveMethodException
 }
