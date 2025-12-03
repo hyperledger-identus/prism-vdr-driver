@@ -75,10 +75,8 @@ trait PRISMDriver extends PRISMReadOnlyDriver {
       options: java.util.Map[String, ?]
   ): interfaces.Driver.OperationResult = {
     paths.headOption match
-      case None =>
-        throw DataCouldNotBeFoundException(
-          Some("the identifier is missing from the path")
-        ) // interfaces.Driver.OperationResult
+      case None => // interfaces.Driver.OperationResult
+        throw DataCouldNotBeFoundException(Some("the identifier is missing from the path"))
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         run(
@@ -106,10 +104,8 @@ trait PRISMDriver extends PRISMReadOnlyDriver {
       options: java.util.Map[String, ?]
   ): Unit = {
     paths.headOption match
-      case None =>
-        throw DataCouldNotBeFoundException(
-          Some("the identifier is missing from the path")
-        ) // interfaces.Driver.OperationResult
+      case None => // interfaces.Driver.OperationResult
+        throw DataCouldNotBeFoundException(Some("the identifier is missing from the path"))
       case Some(hash) =>
         val eventRef: RefVDR = RefVDR(hash)
         run(

@@ -1,9 +1,19 @@
 package hyperledger.identus.vdr.prism
 
+import fmgp.did.method.prism.RefVDR
+
 class DataCouldNotBeFoundException(reason: Option[String])
     extends Exception(
       "Could not find the data" + reason.map(s => s" becuase: $s").getOrElse("")
     )
-class DataNotInitializedException extends Exception("Data wasn't initialized")
-class DataAlreadyDeactivatedException extends Exception("Data was deactivated")
-//class InvalidRequest(reason: String) extends Exception(s"Invalid request because: $reason")
+object UnsupportedNotPassiveMethodException
+    extends RuntimeException("Passive driver does not support create/update/deactivate events")
+
+case class DataNotInitializedException(ref: RefVDR)
+    extends RuntimeException(s"'${ref.hex}' VDR entry was not initialized")
+
+case class DataAlreadyDeactivatedException(ref: RefVDR)
+    extends RuntimeException(s"'${ref.hex}' VDR entry is already deactivated")
+
+case class DataOfUnexpectedTypeException(ref: RefVDR)
+    extends RuntimeException(s"'${ref.hex}' VDR entry is of an unsupported type for this driver")
