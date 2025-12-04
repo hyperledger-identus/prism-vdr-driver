@@ -345,8 +345,18 @@ Design goals:
   [Email: fabio.pinheiro@iohk.io](mailto:fabio.pinheiro@iohk.io) <br>
   [Github: FabioPinheiro](https://github.com/FabioPinheiro)
 
-- ???
+- **Gonçalo Frade** <br>
+  [Email: goncalo.frade@iohk.io](mailto:goncalo.frade@iohk.io) <br>
+  [Github: goncalo-frade-iohk](https://github.com/goncalo-frade-iohk)
 
+- **Pat Losoponkul** <br>
+  [Email: pat.losoponkul@iohk.io](mailto:pat.losoponkul@iohk.io) <br>
+  [Github: patextreme](https://github.com/patextreme)
+
+- **Yurii Shynbuiev** <br>
+  [Email: yurii.shynbuiev@iohk.io](mailto:yurii.shynbuiev@iohk.io) <br>
+  [Github: yshyn-iohk](https://github.com/yshyn-iohk)
+  
 ---
 
 ## Appendices
