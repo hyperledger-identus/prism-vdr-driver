@@ -44,7 +44,7 @@ lazy val V = new {
   val reactivemongo = "1.1.0-RC17"
   val identusVDR = "0.2.1"
 
-  val munit = "1.2.1"
+  val munit = "1.2.2"
   val munitZio = "0.4.0"
   val zio = "2.1.5" // "2.1.22"
 }
