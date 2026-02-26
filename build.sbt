@@ -40,7 +40,7 @@ inThisBuild( // publish config
 
 /** Versions */
 lazy val V = new {
-  val scalaDID = "0.1.0-M36"
+  val scalaDID = "0.1.0-M37"
   val reactivemongo = "1.1.0-RC17"
   val identusVDR = "0.2.1"
 
