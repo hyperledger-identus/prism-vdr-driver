@@ -2,7 +2,7 @@
 
 ## PRISM
 
-This driver implements the [Generic VDR specification][Generic-VDR] following the [PRISM VDR Protocol][PRISM-VDR] that uses the Cardano blockchain as the source of truth. 
+This driver implements the [Generic VDR specification][Generic-VDR] following the [PRISM VDR Protocol][PRISM-VDR] that uses the Cardano blockchain as the source of truth.
 
 The driver following the [PRISM VDR Protocol][PRISM-VDR] to encode data on the blockchain.
 It's based on the [DID PRISM Specification][DID-PRISM].
@@ -11,11 +11,12 @@ It's based on the [DID PRISM Specification][DID-PRISM].
 
 **Verifiable Data Registry for Identus in Cardano**
 
-This Driver fulfill one of the acceptance criteria	in **Milestone 3** of Project `1300189` https://milestones.projectcatalyst.io/projects/1300189/milestones/3 (Delivery 8 Sep 2025).
+This Driver fulfill one of the acceptance criteria in **Milestone 3** of Project `1300189` https://milestones.projectcatalyst.io/projects/1300189/milestones/3 (Delivery 8 Sep 2025).
 
 ## Documentation
 
 Learn more:
+
 - [PRISM VDR specification][PRISM-VDR]
 - [Generic VDR specification][Generic-VDR]
 

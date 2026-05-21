@@ -55,7 +55,7 @@ jobs:
           java-version: openjdk@1.17.0
       - name: Cache sbt
         uses: coursier/cache-action@v6.4
-      
+
       - id: gpg-private-base64
         name: Convert key format to base64
         run: echo "HYP_BOT_GPG_PRIVATE_BASE64=$(echo -n '${{ secrets.HYP_BOT_GPG_PRIVATE }}' | base64 -w 0)" >> "$GITHUB_OUTPUT"
