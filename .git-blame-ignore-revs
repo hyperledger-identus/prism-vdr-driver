@@ -1,2 +1,6 @@
 # Scala Steward: Reformat with scalafmt 3.9.10
 76cc991c94112e5fae2ce8b3f02f842106f48e47
+
+# style: auto-fix and manually resolve all lint errors across the repo
+# Mass formatting. No logic changes.
+3bdcdc4fd19d0d4792a410d69e3ed3f426cd047d
