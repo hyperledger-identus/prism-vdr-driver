@@ -39,13 +39,12 @@ header: 'PRISM VDR Driver'
 <!-- _paginate: false -->
 
 # PRISM VDR Driver
+
 ## Introduction & Code Examples
 
 **Verifiable Data Registry on Cardano Blockchain**
 
 [This VDR is part of Hyperledger Identus Project and was created under the Cardano's Project Catalyst #1300189, Milestone 3 https://milestones.projectcatalyst.io/projects/1300189/milestones/3](https://milestones.projectcatalyst.io/projects/1300189/milestones/3)
-
-
 
 ---
 
@@ -86,6 +85,7 @@ The **PRISM VDR Protocol** is the part of the PRISM Protocol specification that 
 4. **How to verify data authenticity** from the blockchain
 
 **Key Features:**
+
 - Uses Cardano transaction metadata [(label `21325`)](https://github.com/cardano-foundation/CIPs/pull/973)
 - Encodes data in Protocol Buffers (protobuf)
 - Signs with secp256k1 ECDSA cryptography
@@ -95,14 +95,15 @@ The **PRISM VDR Protocol** is the part of the PRISM Protocol specification that 
 
 ## PRISM Protocol - Entry Types
 
-
 **SSI (Self-Sovereign Identity) Entries**
+
 - Represent [`did:prism` identifiers (DIDs)](https://github.com/input-output-hk/prism-did-method-spec) & DID Documents
 - Contain cryptographic keys (MASTER_KEY, VDR_KEY, etc.)
 - Form a chain of lifecycle events (E-1, E-2, E-6)
 - **SSI identifier** = hash of the creation event (E-1)
 
 **Storage Entries**
+
 - Store arbitrary data (up to 16KB per transaction metadata limit)
 - **Owned by** an SSI entry (signed by owner's VDR_KEY)
 - Form a chain of lifecycle events (E-7, E-8, E-9)
@@ -123,6 +124,7 @@ The **PRISM VDR Protocol** is the part of the PRISM Protocol specification that 
 6. **Data Immutable** - Considered immutable after confirmation
 
 **Settlement Time:**
+
 - **Practically immutable:** After a few blocks (~5-10 minutes)
 - **Fully settled:** ~36 minutes (guaranteed immutability)
 
@@ -155,6 +157,7 @@ graph LR;
 </div>
 
 **Key Components:**
+
 - **PRISMDriver** - Main API implementation
 - **GenericVDRDriver** - Core VDR logic (from scala-did library)
 - **ZIO** - Functional effect system for async operations
@@ -167,12 +170,12 @@ graph LR;
 
 The driver provides 5 main operations:
 
-| Operation  | Description |
-|------------|-------------|
-| `create()` | Create new storage entry on blockchain |
-| `read()`   | Fetch data from blockchain by identifier |
-| `update()` | Update existing entry with new data |
-| `delete()` | Deactivate entry (marks as deleted) |
+| Operation  | Description                             |
+|------------|-----------------------------------------|
+| `create()` | Create new storage entry on blockchain  |
+| `read()`   | Fetch data from blockchain by identifier|
+| `update()` | Update existing entry with new data     |
+| `delete()` | Deactivate entry (marks as deleted)     |
 | `verify()` | Verify data and get cryptographic proof |
 
 Let's see each one in action with code examples!
@@ -242,6 +245,7 @@ println(s"State: ${createResult.getState}")  // SUCCESS
 ```
 
 **What happens:**
+
 1. Data is encoded in protobuf
 2. Signed with your VDR key
 3. Submitted to Cardano blockchain
@@ -258,7 +262,8 @@ sbt demo/run step1
 ```
 
 **Output:**
-```
+
+```text
 Data created: 4d792044617461...
 VDREntryID: abc123def456...
 State: SUCCESS
@@ -282,11 +287,13 @@ println(s"Data length: ${readData.length} bytes")
 ```
 
 **Run the demo:**
+
 ```bash
 sbt demo/run step2  # Reads data created in step1
 ```
 
 **What happens:**
+
 1. Driver queries Cardano blockchain via Blockfrost
 2. Fetches transaction with matching event hash
 3. Decodes protobuf data
@@ -314,6 +321,7 @@ println(s"State: ${updateResult.getState}")  // SUCCESS
 ```
 
 **Run the demo:**
+
 ```bash
 sbt demo/run step3  # Updates the entry from step1
 ```
@@ -333,6 +341,7 @@ graph LR
 ```
 
 Each update:
+
 - Creates a **new event** on the blockchain
 - References the **previous event hash**
 - Forms an **immutable chain** of updates
@@ -355,12 +364,14 @@ println("✓ Entry deactivated")
 ```
 
 **Run the demo:**
+
 ```bash
 sbt demo/run step6  # Deactivates the entry
 sbt demo/run step7  # Try to read - returns empty (step7 = step2)
 ```
 
 **Try to read after deactivation:**
+
 ```scala
 val deletedData = driver.read(Array(vdrEntryId), Map.empty.asJava, null, Array.empty)
 println(s"Data length: ${deletedData.length}")  // Output: 0
@@ -388,11 +399,13 @@ println("✓ Cryptographic proof obtained")
 ```
 
 **Run the demo:**
+
 ```bash
 sbt demo/run step5  # Verify and get cryptographic proof
 ```
 
 **Use cases:**
+
 - Prove data existed at a specific time
 - Verify data hasn't been tampered with
 - Show audit trail of changes
@@ -415,6 +428,7 @@ status match {
 ```
 
 **Run the demo:**
+
 ```bash
 sbt demo/run step8  # Check operation status
 ```
@@ -443,10 +457,12 @@ sbt demo/run step8  # Check operation status
 ```
 
 **Or see the full code in:**
+
 - `demo/src/main/scala/demo/ExamplesStepByStep.scala`
 - `demo/src/main/scala/demo/DemoConfig.scala`
 
 **All examples use:**
+
 ```scala
 val driver = DemoConfig.createDriverMongoDBWithIndexer()
 // Combines MongoDB persistence + automatic blockchain indexing
@@ -469,7 +485,9 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
    - Timestamp proofs
 
 ---
-## Use Cases
+
+## Use Cases (continued)
+
 4. **Supply Chain**
    - Track product provenance
    - Verify authenticity
@@ -481,6 +499,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
    - Confidentially and Anonymously (No PII is collected)
    - Data Integrity and Verifiability
    - **Proof of Continuity!**
+
 ---
 
 ## Integration - Maven/SBT
@@ -488,11 +507,13 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 **Add to your project:**
 
 - **SBT (build.sbt):**
+
   ```scala
   libraryDependencies += "org.hyperledger.identus" %% "prism-vdr-driver" % "0.3.0"
   ```
 
 - **Maven (pom.xml):**
+
   ```xml
   <dependency>
       <groupId>org.hyperledger.identus</groupId>
@@ -502,12 +523,12 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
   ```
 
 - **Gradle (build.gradle):**
+
   ```gradle
   implementation 'org.hyperledger.identus:prism-vdr-driver_3:0.3.0'
   ```
 
 **Repository:** Published to Maven Central
-
 
 ---
 
@@ -532,6 +553,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 ## Key Technical Details
 
 **Protocol Specifications:**
+
 - **Blockchain:** Cardano (mainnet or preprod)
 - **Metadata Label:** `21325` (PRISM_LABEL)
 - **Encoding:** Protocol Buffers (protobuf)
@@ -540,6 +562,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 - **Settlement Time:** ~36 minutes (guaranteed immutability)
 
 **Driver Specifications:**
+
 - **Language:** Scala 3.3.6
 - **License:** Apache 2.0
 - **API:** Java-compatible interface
@@ -549,6 +572,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 ## Networks - Preprod vs Mainnet
 
 **Preprod (Testnet):**
+
 - ✅ Free test TADA tokens
 - ✅ Fast testing and iteration
 - ✅ Same functionality as mainnet
@@ -556,6 +580,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 - 📍 Explorer: https://preprod.cardanoscan.io
 
 **Mainnet (Production):**
+
 - ✅ Permanent, production-grade storage
 - ✅ Real economic value
 - ⚠️ Costs real ADA (~0.2 per transaction)
@@ -567,6 +592,7 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 ## Security Considerations
 
 **✅ Strong Security Features:**
+
 - secp256k1 cryptographic signatures
 - Blockchain immutability
 - Public verifiability
@@ -586,17 +612,19 @@ val driver = DemoConfig.createDriverMongoDBWithIndexer()
 ## Resources & Documentation
 
 **Official Documentation:**
+
 - 📖 PRISM VDR Specification: `prism-vdr-specification.md`
 - 💻 Source code: https://github.com/hyperledger-identus/prism-vdr-driver
 
 **Hyperledger Identus:**
+
 - 🌐 Website: https://www.hyperledger.org/projects/identus
 - 📚 Identus VDR Spec: https://github.com/hyperledger-identus/identus-vdr
 
 **Cardano Resources:**
+
 - 🔗 Blockfrost API: https://blockfrost.io
 - 🔍 Block Explorer: https://cardanoscan.io
-
 
 ---
 
@@ -616,11 +644,12 @@ The PRISM VDR Driver makes it easy to store verifiable, immutable data on the Ca
 
 ---
 
-## Thank You!
+## Thank You
 
 # Questions?
 
 **Contact & Resources:**
+
 - 📧 GitHub Issues: https://github.com/hyperledger-identus/prism-vdr-driver/issues
 - 💬 Hyperledger Identus Community:
   - 💬 [Discord Identus channel - Linux Foundation Decentralized Trust](https://discord.gg/8dk4zW6D)
@@ -634,7 +663,6 @@ The PRISM VDR Driver makes it easy to store verifiable, immutable data on the Ca
 <!-- _class: lead -->
 <!-- _paginate: false -->
 <!-- footer: 'Hyperledger Identus | © 2025' -->
-
 
 **Made with ❤️ by the Hyperledger Identus Team**
 
