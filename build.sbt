@@ -1,4 +1,4 @@
-inThisBuild(Seq(scalaVersion := "3.3.7"))
+inThisBuild(Seq(scalaVersion := "3.3.8"))
 inThisBuild(
   Seq(
     // ### https://docs.scala-lang.org/scala3/guides/migration/options-new.html
