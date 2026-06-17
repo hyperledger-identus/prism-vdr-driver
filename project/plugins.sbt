@@ -4,7 +4,7 @@ addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.1")
 
 // CI - https://github.com/rtimush/sbt-updates/tags
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.4") // sbt> dependencyUpdates
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.7.0") // sbt> dependencyUpdates
 
 // TEST COVERAGE - https://github.com/scoverage/sbt-scoverage
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.4.4") // Needs scala version 3.2.2
