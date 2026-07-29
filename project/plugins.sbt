@@ -10,7 +10,7 @@ addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.7.0") // sbt> dependencyUpd
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.4.4") // Needs scala version 3.2.2
 
 // PUBLISH
-addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.11.2")
+addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.12.0")
 // addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.17")
 // addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1") //https://github.com/sbt/sbt-pgp#sbt-pgp
 
