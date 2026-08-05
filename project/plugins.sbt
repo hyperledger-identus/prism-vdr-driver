@@ -14,14 +14,9 @@ addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.12.0")
 // addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.17")
 // addSbtPlugin("com.github.sbt" % "sbt-pgp" % "2.2.1") //https://github.com/sbt/sbt-pgp#sbt-pgp
 
-// To quick develop the demo - Revolver use for command 'reStart'
-// (like the command 'run' but run on the backgroun by forking the app from sbt)
-// https://github.com/spray/sbt-revolver/tags
-addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
-
 // Deploy demo - https://github.com/sbt/sbt-assembly/tags
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.3.1")
-addSbtPlugin("com.github.sbt" % "sbt-gzip" % "2.0.0")
+// Removed sbt-revolver/sbt-gzip: not published for sbt 2.x and unused in this build.
 
 // To debug what the job sends to https://github.com/FabioPinheiro/scala-did/security/dependabot
 // See file in .github/workflows/sbt-dependency-submission.yml
